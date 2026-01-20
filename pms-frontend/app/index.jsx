@@ -31,7 +31,7 @@ const index = () => {
             </Pressable>
           </Link>
           <Text style={{padding:10}}>OR</Text>
-          <Link href="/register">
+          <Link href="/signup">
             <Pressable style={styles.button}>
               <Text style={styles.buttonText}>Sign Up</Text>
             </Pressable>
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
-    font: 'Roboto',
+    fontFamily: 'Roboto',
     color: Colors.light.success
   },
   imageDiv: {
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   contentText: {
     fontSize: 24,
-    font: 'Roboto',
+    fontFamily: 'Roboto',
     color: Colors.light.text
   },
   buttonDiv: {

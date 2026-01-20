@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,54 +8,80 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
+  ScrollView,
 } from 'react-native';
-import { useSignIn } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
-import {logo} from '../../assets/images/logo.png'
 import { Ionicons } from '@expo/vector-icons';
+import { useSignIn } from '@clerk/clerk-expo';
+import { Link, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
+import logo from '../../assets/images/logo.png';
 
-export default function LoginScreen() {
+export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
-  const [phone, setPhone] = useState('');
+  const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!isLoaded) return;
-    setLoading(true);
+  const onSignInPress = async () => {
+    if (!isLoaded || loading) return;
+
     setError('');
+    setLoading(true);
 
     try {
       const signInAttempt = await signIn.create({
-        identifier: phone.trim(),
+        identifier: emailAddress.trim(),
         password,
       });
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace('/(tabs)'); // ← adjust to your app structure
+        router.replace('/(tabs)/dashboard');
       } else {
-        setError('Please complete additional steps');
+        setError('Please complete additional verification steps');
       }
     } catch (err) {
-      setError(err?.errors?.[0]?.longMessage || 'Login failed. Try again.');
+      const errorMessage =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        'Invalid email or password';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGoogleSignIn = async () => {
+    if (!isLoaded || loading) return;
+
+    setError('');
+    setLoading(true);
+
+    try {
+      // Start OAuth flow with Google
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/sso-callback',         // ← required callback route
+        redirectUrlComplete: '/(tabs)',       // where to go after successful login
+      });
+    } catch (err) {
+      setError('Google sign-in failed. Please try again.');
+      console.error('Google sign-in error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ScrollView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        {/* Header - App Name */}
         <Text style={styles.appName}>Smart Poultry</Text>
 
         {/* Toggle */}
@@ -65,90 +91,113 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.inactiveToggle}>
-            <Text style={styles.inactiveToggleText}>Sign Up</Text>
+            <Link href="/signup" asChild>
+              <Text style={styles.inactiveToggleText}>Sign Up</Text>
+            </Link>
           </TouchableOpacity>
         </View>
 
-        {/* Card-like container */}
         <View style={styles.card}>
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image
-              source={logo} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Welcome Text */}
           <Text style={styles.welcomeTitle}>Welcome Back!</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Login to your poultry account
-          </Text>
+          <Text style={styles.welcomeSubtitle}>Login to your poultry account</Text>
 
-          {/* Phone Input */}
+          {/* Email Input */}
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputIcon}>
-              <Ionicons name='call-outline' size={20} color={Colors.light.icon} />
-            </Text>
+            <Ionicons
+              name="mail-outline"
+              size={22}
+              color={Colors.light.icon}
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
-              placeholder="Phone number"
+              placeholder="Email address"
               placeholderTextColor="#aaa"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
+              keyboardType="email-address"
+              autoCapitalize="none"
               autoCorrect={false}
+              value={emailAddress}
+              onChangeText={setEmailAddress}
               editable={!loading}
             />
           </View>
 
-          {/* Password Input */}
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputIcon}>
-              <Ionicons name='lock-closed-outline' size={20} color={Colors.light.icon} />
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#aaa"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              autoCorrect={false}
-              editable={!loading}
-            />
-            <TouchableOpacity style={styles.eyeIcon}>
-              <Text style={styles.inputIcon}>
-                <Ionicons name='eye-off-outline' size={20} color={Colors.light.icon}/>
-              </Text>
-            </TouchableOpacity>
-          </View>
+            {/* Password Input */}
+                    <View style={styles.inputWrapper}>
+                      <Text style={styles.inputIcon}>
+                        <Ionicons name='lock-closed-outline' size={20} color={Colors.light.icon}/>
+                      </Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor="#aaa"
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onChangeText={setPassword}
+                        editable={!loading}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeIcon}
+                        onPress={() => setShowPassword(!showPassword)}
+                      >
+                        <Ionicons
+                          name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                          size={20}
+                          color={Colors.light.icon}
+                        />
+                      </TouchableOpacity>
+                    </View>
 
-          {/* Error */}
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          {/* Login Button */}
+          {/* Email/Password Login Button */}
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading || !phone || !password}
+            onPress={onSignInPress}
+            disabled={loading || !emailAddress.trim() || !password}
           >
             <Text style={styles.buttonText}>
               {loading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          {/* Google Login Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={onGoogleSignIn}
+            disabled={loading}
+          >
+            <Ionicons name="logo-google" size={22} color="#4285F4" />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Link href="/signup" asChild>
+              <Text style={styles.link}>Sign up</Text>
+            </Link>
+          </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+export const styles = StyleSheet.create({
+  // ... your existing styles remain the same ...
+
   container: {
     flex: 1,
     paddingHorizontal: 24,
@@ -158,7 +207,7 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a472a', // dark green
+    color: '#1a472a',
     marginTop: 40,
     marginBottom: 28,
   },
@@ -220,15 +269,14 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#1a472a',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
     overflow: 'hidden',
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 200,
+    height: 200,
   },
 
   welcomeTitle: {
@@ -278,7 +326,7 @@ const styles = StyleSheet.create({
   },
 
   loginButton: {
-    backgroundColor: '#1a472a', // dark green
+    backgroundColor: '#1a472a',
     width: '100%',
     height: 58,
     borderRadius: 16,
@@ -293,5 +341,57 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '700',
+  },
+
+  footer: {
+    flexDirection: 'row',
+    marginTop: 32,
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#666',
+    fontSize: 15,
+  },
+  link: {
+    color: '#2e7d32',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  // New styles for divider and Google button
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+    width: '100%',
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#d1d5db',
+  },
+  orText: {
+    color: '#6b7280',
+    fontSize: 14,
+    marginHorizontal: 16,
+    fontWeight: '500',
+  },
+
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 16,
+    height: 58,
+    width: '100%',
+    marginBottom: 16,
+  },
+  googleButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 12,
   },
 });

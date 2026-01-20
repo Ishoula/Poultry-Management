@@ -23,7 +23,7 @@ const styles= StyleSheet.create({
        textAlign: 'center',
        fontSize: 24,
        fontWeight: 'bold',
-       font: 'Roboto',
+       fontFamily: 'Roboto',
        color: Colors.light.success
      }, 
 })
