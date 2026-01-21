@@ -10,7 +10,7 @@ const breedsData = [
         description: 'Rapid growth for meat',
         growthPeriod: '6-8 Weeks',
         avgMarketWeight: '2.5-3 kg',
-        icon: 'trending-up',
+        icon: 'food-drumstick',
         color: Colors.light.success,
     },
     {
@@ -28,7 +28,7 @@ const breedsData = [
         description: 'Dual-purpose',
         growthPeriod: '10-12 Weeks',
         avgMarketWeight: '3-3.5 kg',
-        icon: 'repeat',
+        icon: 'egg-fried',
         color: Colors.light.cart,
     },
 ];
@@ -50,7 +50,7 @@ const Breeds = () => {
                 <View style={styles.statsContainer}>
                     {breedsData.map((breed) => (
                         <View key={breed.id} style={styles.statItem}>
-                            <Ionicons name={breed.icon} size={36} color={breed.color} />
+                            <MaterialCommunityIcons name={breed.icon} size={36} color={breed.color} />
                             <Text style={styles.breedName}>{breed.name}</Text>
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Description: </Text>
@@ -66,7 +66,7 @@ const Breeds = () => {
                             </View>
                         </View>
                     ))}
-                </View>
+                </View> 
 
                 <TouchableOpacity
                     style={{
@@ -87,7 +87,7 @@ const Breeds = () => {
                     <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8 }}>
                         Add breed
                     </Text>
-                    <MaterialCommunityIcons name="plus" size={24} color={Colors.light.success} />
+                    <MaterialCommunityIcons name="water-plus" size={24} color={Colors.light.success} />
                 </TouchableOpacity>
             </ScrollView>
         </View>
