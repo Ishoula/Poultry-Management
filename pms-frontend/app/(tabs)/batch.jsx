@@ -6,30 +6,30 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 const breedsData = [
     {
         id: '1',
-        name: 'Broilers',
-        description: 'Rapid growth for meat',
-        growthPeriod: '6-8 Weeks',
-        avgMarketWeight: '2.5-3 kg',
-        icon: 'food-drumstick',
-        color: Colors.light.success,
+        name: 'Batch 1',
+        breedType: 'Broilers',
+        Total: '100 chicks',
+        dateOfArrival: '27 Jan 2024',
+        icon: 'egg',
+        color: Colors.light.pending,
     },
     {
         id: '2',
-        name: 'Layers',
-        description: 'Egg laying',
-        growthPeriod: '18-24 Weeks',
-        avgMarketWeight: '1.8-2.5 kg',
+        name: 'Batch 2',
+        breedType: 'Egg laying',
+        Total: '50 chicks',
+        dateOfArrival: '27 Feb 2024',
         icon: 'egg',
         color: Colors.light.pending,
     },
     {
         id: '3',
-        name: 'Kuroilers',
-        description: 'Dual-purpose',
-        growthPeriod: '10-12 Weeks',
-        avgMarketWeight: '3-3.5 kg',
-        icon: 'egg-fried',
-        color: Colors.light.cart,
+        name: 'Batch 3',
+        breedType: 'Kuroilers',
+        Total: '75 chicks',
+        dateOfArrival: '27 March 2024',
+        icon: 'egg',
+        color: Colors.light.pending,
     },
 ];
 
@@ -39,11 +39,11 @@ const Breeds = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <UserNavbar />
 
-                <Text style={styles.pageTitle}>Breeds</Text>
+                <Text style={styles.pageTitle}>Batches</Text>
 
                 {/* Featured / Highlighted breed */}
                 <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your breeds</Text>
+                    <Text style={styles.featuredTitle}>Your batches</Text>
                 </View>
 
                 <View style={styles.statsContainer}>
@@ -52,16 +52,20 @@ const Breeds = () => {
                             <MaterialCommunityIcons name={breed.icon} size={36} color={breed.color} />
                             <Text style={styles.breedName}>{breed.name}</Text>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Description: </Text>
-                                <Text style={styles.detailValue}>{breed.description}</Text>
+                                <Text style={styles.detailLabel}>Breed Type: </Text>
+                                <Text style={styles.detailValue}>{breed.breedType}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Growth: </Text>
+                                <Text style={styles.detailLabel}>Description: </Text>
                                 <Text style={styles.detailValue}>{breed.growthPeriod}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Avg Weight: </Text>
-                                <Text style={styles.detailValue}>{breed.avgMarketWeight}</Text>
+                                <Text style={styles.detailLabel}>Total: </Text>
+                                <Text style={styles.detailValue}>{breed.Total}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Date of Arrival: </Text>
+                                <Text style={styles.detailValue}>{breed.dateOfArrival}</Text>
                             </View>
                         </View>
                     ))}
@@ -84,7 +88,7 @@ const Breeds = () => {
                     }}
                 >
                     <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8 }}>
-                        Add breed
+                        Add batch
                     </Text>
                     <MaterialCommunityIcons name="water-plus" size={24} color={Colors.light.success} />
                 </TouchableOpacity>

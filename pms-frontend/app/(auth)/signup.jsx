@@ -19,7 +19,7 @@ export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -36,7 +36,7 @@ export default function SignUpScreen() {
 
     try {
       const signUpResponse = await signUp.create({
-        username: username.trim(),
+        fullName: fullName.trim(),
         emailAddress: emailAddress.trim(),
         password,
       });
@@ -56,8 +56,8 @@ export default function SignUpScreen() {
           errorMessage = 'Password must be at least 8 characters';
         } else if (clerkError.code === 'form_identifier_exists') {
           errorMessage = 'This email is already registered';
-        } else if (clerkError.code === 'form_username_invalid') {
-          errorMessage = 'Username can only contain letters, numbers, and underscores';
+        } else if (clerkError.code === 'form_fullName_invalid') {
+          errorMessage = 'fullName can only contain letters, numbers, and underscores';
         }
       }
 
@@ -175,17 +175,17 @@ export default function SignUpScreen() {
             Manage your poultry farm with ease
           </Text>
 
-          {/* Username Input */}
+          {/* fullName Input */}
           <View style={styles.inputWrapper}>
             <Text style={styles.inputIcon}>
               <Ionicons name='person-circle-outline' size={20} color={Colors.light.icon} />
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Username"
+              placeholder="fullName"
               placeholderTextColor="#aaa"
-              value={username}
-              onChangeText={setUsername}
+              value={fullName}
+              onChangeText={setFullName}
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
@@ -243,7 +243,7 @@ export default function SignUpScreen() {
             onPress={onSignUpPress}
             disabled={
               loading ||
-              !username.trim() ||
+              !fullName.trim() ||
               !emailAddress.trim() ||
               password.length < 6
             }
