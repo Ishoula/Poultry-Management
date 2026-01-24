@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Picker } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput} from 'react-native';
 import { Colors } from '../../constants/colors';
 import { ScrollView } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import UserNavbar from '../../components/UserNavbar';
 
-const GrowthLog = () => {
-    const [breedType, setBreedType] = useState('Broiler');
-    const [description, setDescription] = useState('');
-    const [growthPeriod, setGrowthPeriod] = useState('');
-    const [averageWeight, setAverageWeight] = useState('');
+const AddGrowthLog = () => {
+    const [eventType, setEventType] = useState('Broiler');
+    const [value, setValue] = useState('');
+    const [date, setDate] = useState('');
+    const [note, setNote] = useState('');
 
     const handleRegister = () => {
         // TODO: Implement registration logic (e.g., API call)
         console.log({
-            breedType,
-            description,
-            growthPeriod,
-            averageWeight,
+            eventType,
+            value,
+            date,
+            note,
+            
         });
         // Optionally navigate back or show success message
     };
@@ -26,63 +28,48 @@ const GrowthLog = () => {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <UserNavbar />
 
-                <Text style={styles.pageTitle}>Breeds</Text>
-                <Text style={styles.subtitle}>Register a breed</Text>
+                <Text style={styles.pageTitle}>Growth Log</Text>
+                <Text style={styles.subtitle}>What happened in the farm today</Text>
 
                 <View style={styles.formContainer}>
-                    {/* Breed Type Dropdown */}
+                    {/* Event Type Dropdown */}
                     <View style={styles.field}>
-                        <Text style={styles.label}>Breed Type</Text>
+                        <Text style={styles.label}>Event</Text>
                         <View style={styles.underlineContainer}>
                             <Picker
-                                selectedValue={breedType}
-                                onValueChange={(itemValue) => setBreedType(itemValue)}
+                                selectedValue={eventType}
+                                onValueChange={(itemValue) => setEventType(itemValue)}
                                 style={styles.picker}
                                 mode="dialog"
                             >
-                                <Picker.Item label="Broiler" value="Broiler" />
-                                <Picker.Item label="Layers" value="Layers" />
-                                <Picker.Item label="Kuroilers" value="Kuroilers" />
+                                <Picker.Item label="Death" value="Death" />
+                                <Picker.Item label="Sickness" value="Sickness" />
+                                <Picker.Item label="Sold" value="Sold" />
                             </Picker>
                         </View>
                     </View>
 
-                    {/* Description */}
+                    {/* Value */}
                     <View style={styles.field}>
-                        <Text style={styles.label}>Description</Text>
+                        <Text style={styles.label}>Value</Text>
                         <TextInput
                             style={styles.underlineInput}
-                            value={description}
-                            onChangeText={setDescription}
-                            placeholder="Enter breed description"
-                            multiline
-                            numberOfLines={4}
+                            value={value}
+                            onChangeText={setValue}
+                            placeholder="Enter the number "
                             placeholderTextColor="#aaa"
                         />
                     </View>
 
-                    {/* Growth Period */}
+                    {/*Note */}
                     <View style={styles.field}>
-                        <Text style={styles.label}>Growth Period</Text>
+                        <Text style={styles.label}>Note</Text>
                         <TextInput
                             style={styles.underlineInput}
-                            value={growthPeriod}
-                            onChangeText={setGrowthPeriod}
-                            placeholder="e.g., 20-24 weeks"
+                            value={date}
+                            onChangeText={setNote}
+                            placeholder="Details of what happened"
                             keyboardType="default"
-                            placeholderTextColor="#aaa"
-                        />
-                    </View>
-
-                    {/* Average Weight */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Average Weight</Text>
-                        <TextInput
-                            style={styles.underlineInput}
-                            value={averageWeight}
-                            onChangeText={setAverageWeight}
-                            placeholder="e.g., 2.5 kg"
-                            keyboardType="numeric"
                             placeholderTextColor="#aaa"
                         />
                     </View>
@@ -96,7 +83,7 @@ const GrowthLog = () => {
         </View>
     );
 };
-
+export default AddGrowthLog;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -166,4 +153,3 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AddBreed;

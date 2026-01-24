@@ -3,69 +3,72 @@ import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const breedsData = [
+const ordersData = [
     {
         id: '1',
-        name: 'Batch 1',
-        breedType: 'Broilers',
-        Total: '100 chicks',
-        dateOfArrival: '27 Jan 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        name: 'Shoula',
+        breedType: 'Boilers',
+        basis:'Per kg',
+        quantity: '25kg',
+        price: '50000 FRW',
+        icon: 'cart',
+        color: Colors.light.success,
     },
     {
         id: '2',
-        name: 'Batch 2',
-        breedType: 'Egg laying',
-        Total: '50 chicks',
-        dateOfArrival: '27 Feb 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        name: 'Delight',
+        breedType: 'Layers',
+        basis:'Per kg',
+        quantity: '20kg',
+        price: '40000 FRW',
+        icon: 'cart',
+        color: Colors.light.success,
     },
     {
         id: '3',
-        name: 'Batch 3',
+        name: 'Pasca',
         breedType: 'Kuroilers',
-        Total: '75 chicks',
-        dateOfArrival: '27 March 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        basis:'Per chicken',
+        quantity: '15 chicken',
+        price: '30000 FRW',
+        icon: 'cart',
+        color: Colors.light.success,
     },
 ];
 
-const Batch = () => {
+const Orders = () => {
     return (
         <View style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 <UserNavbar />
 
-                <Text style={styles.pageTitle}>Batches</Text>
+                <Text style={styles.pageTitle}>Orders</Text>
 
                 {/* Featured / Highlighted breed */}
                 <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your batches</Text>
+                    <Text style={styles.featuredTitle}>Your orders</Text>
                 </View>
 
                 <View style={styles.statsContainer}>
-                    {breedsData.map((breed) => (
-                        <View key={breed.id} style={styles.statItem}>
-                            <MaterialCommunityIcons name={breed.icon} size={36} color={breed.color} />
-                            <Text style={styles.breedName}>{breed.name}</Text>
+                    {ordersData.map((order) => (
+                        <View key={order.id} style={styles.statItem}>
+                            <MaterialCommunityIcons name={order.icon} size={24} color={order.color} />
+                            <Text style={styles.breedName}>{order.name}</Text>
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Breed Type: </Text>
-                                <Text style={styles.detailValue}>{breed.breedType}</Text>
+                                <Text style={styles.detailValue}>{order.breedType}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Description: </Text>
-                                <Text style={styles.detailValue}>{breed.growthPeriod}</Text>
+                                <Text style={styles.detailLabel}>Basis: </Text>
+                                <Text style={styles.detailValue}>{order.basis}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Total: </Text>
-                                <Text style={styles.detailValue}>{breed.Total}</Text>
+                                <Text style={styles.detailLabel}>Quantity: </Text>
+                                <Text style={styles.detailValue}>{order.quantity}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Date of Arrival: </Text>
-                                <Text style={styles.detailValue}>{breed.dateOfArrival}</Text>
+                                <Text style={styles.detailLabel}>Price: </Text>
+                                <Text style={styles.detailValue}>{order.price}</Text>
                             </View>
                         </View>
                     ))}
@@ -84,37 +87,30 @@ const Batch = () => {
                     }}
                     onPress={() => {
                         // Add your logic here (e.g., navigate to add breed screen)
-                        console.log('Add breed tapped');
+                        console.log('Add orderr tapped');
                     }}
                 >
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8 }}>
-                        Add batch
+                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize:18 }}>
+                        Add order
                     </Text>
-                    <MaterialCommunityIcons name="water-plus" size={24} color={Colors.light.success} />
+                    <MaterialCommunityIcons name="cart-plus" size={24} color={Colors.light.success} />
                 </TouchableOpacity>
             </ScrollView>
         </View>
     );
 };
 
-export default Batch;
+export default Orders;
 
-// Styles remain mostly the same; add this if you want to use breedDescription later
 const styles = StyleSheet.create({
-    // ... your existing styles ...
-    breedDescription: {
+    
+    breedType: {
         fontSize: 15,
         color: '#555',
         marginBottom: 12,
         textAlign: 'center',
     },
-    // Optional: for future image additions
-    breedImage: {
-        width: '100%',
-        height: 150,
-        borderRadius: 12,
-        marginBottom: 12,
-    },
+  
     container: {
         flex: 1,
         backgroundColor: Colors.light.background || '#f8f9fa',
@@ -162,7 +158,7 @@ const styles = StyleSheet.create({
     statsContainer: {
         paddingHorizontal: 16,
         paddingBottom: 24,
-        gap: 16, // React Native 0.71+ supports gap
+        gap: 16,
     },
     statItem: {
         backgroundColor: '#fff',
@@ -182,7 +178,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
         marginBottom: 4,
     },
-    breedDescription: {
+    breedType: {
         fontSize: 15,
         color: '#555',
         marginBottom: 12,
@@ -194,12 +190,12 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     detailLabel: {
-        fontSize: 14,
+        fontSize: 18,
         color: '#333',
         fontWeight: '700',
     },
     detailValue: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: '500',
         color: '#474747',
     },

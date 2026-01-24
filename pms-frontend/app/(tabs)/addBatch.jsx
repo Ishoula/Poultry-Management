@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import{ useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Picker } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { ScrollView } from 'react-native';
@@ -152,4 +152,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AddBreed;
+export default AddBatch;
