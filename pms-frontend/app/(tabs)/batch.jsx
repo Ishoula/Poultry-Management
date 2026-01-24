@@ -1,206 +1,258 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const breedsData = [
+const batchesData = [
     {
         id: '1',
         name: 'Batch 1',
-        breedType: 'Broilers',
-        Total: '100 chicks',
-        dateOfArrival: '27 Jan 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        breed: 'Broilers',
+        total: '100 chicks',
+        arrival: '27 Jan 24',
+        status: 'Active',
+        iconColor: '#FBAC4F',
     },
     {
         id: '2',
         name: 'Batch 2',
-        breedType: 'Egg laying',
-        Total: '50 chicks',
-        dateOfArrival: '27 Feb 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        breed: 'Layers',
+        total: '50 chicks',
+        arrival: '11 Apr 24',
+        status: 'Active',
+        iconColor: '#FBAC4F',
     },
     {
         id: '3',
         name: 'Batch 3',
-        breedType: 'Kuroilers',
-        Total: '75 chicks',
-        dateOfArrival: '27 March 2024',
-        icon: 'egg',
-        color: Colors.light.pending,
+        breed: 'Kuroilers',
+        total: '70 chicks',
+        arrival: '25 Mar 24',
+        status: 'Active',
+        iconColor: '#FBAC4F',
     },
 ];
 
 const Batch = () => {
-    return (
-        <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <UserNavbar />
-
-                <Text style={styles.pageTitle}>Batches</Text>
-
-                {/* Featured / Highlighted breed */}
-                <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your batches</Text>
+    const renderBatch = ({ item }) => (
+        <View style={styles.batchCard}>
+            <View style={styles.batchCardHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: `${item.iconColor}26` }]}> 
+                    <Icon name="emoji-food-beverage" size={22} color={item.iconColor} />
                 </View>
-
-                <View style={styles.statsContainer}>
-                    {breedsData.map((breed) => (
-                        <View key={breed.id} style={styles.statItem}>
-                            <MaterialCommunityIcons name={breed.icon} size={36} color={breed.color} />
-                            <Text style={styles.breedName}>{breed.name}</Text>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Breed Type: </Text>
-                                <Text style={styles.detailValue}>{breed.breedType}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Description: </Text>
-                                <Text style={styles.detailValue}>{breed.growthPeriod}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Total: </Text>
-                                <Text style={styles.detailValue}>{breed.Total}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Date of Arrival: </Text>
-                                <Text style={styles.detailValue}>{breed.dateOfArrival}</Text>
+                <View style={styles.batchInfo}>
+                    <View style={styles.batchTitleRow}>
+                        <View>
+                            <Text style={styles.batchName}>{item.name}</Text>
+                            <View style={[styles.statusPill, { backgroundColor: `${Colors.light.success}14` }]}> 
+                                <Text style={styles.statusText}>{item.status}</Text>
                             </View>
                         </View>
-                    ))}
-                </View> 
+                        <TouchableOpacity>
+                            <Icon name="more-vert" size={22} color={Colors.light.icon} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.batchMetaRow}>
+                        <View style={styles.metaItem}>
+                            <Text style={styles.metaLabel}>Breed</Text>
+                            <Text style={styles.metaValue}>{item.breed}</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                            <Text style={styles.metaLabel}>Total</Text>
+                            <Text style={styles.metaValue}>{item.total}</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                            <Text style={styles.metaLabel}>Arrival</Text>
+                            <Text style={styles.metaValue}>{item.arrival}</Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
 
-                <TouchableOpacity
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 30,
-                        backgroundColor: Colors.light.topBackground,
-                        padding: 12,
-                        borderRadius: 10,
-                        marginHorizontal: 20,
-                    }}
-                    onPress={() => {
-                        // Add your logic here (e.g., navigate to add breed screen)
-                        console.log('Add breed tapped');
-                    }}
-                >
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8 }}>
-                        Add batch
-                    </Text>
-                    <MaterialCommunityIcons name="water-plus" size={24} color={Colors.light.success} />
-                </TouchableOpacity>
-            </ScrollView>
+    return (
+        <View style={styles.safeArea}>
+            <UserNavbar />
+            <FlatList
+                data={batchesData}
+                renderItem={renderBatch}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListHeaderComponent={
+                    <View style={styles.pageHeader}>
+                        <View style={styles.headerRow}>
+                            <TouchableOpacity style={styles.headerIconButton}>
+                                <Icon name="arrow-back" size={20} color={Colors.light.text} />
+                            </TouchableOpacity>
+                            <Text style={styles.title}>Batches</Text>
+                            <TouchableOpacity style={styles.headerIconButton}>
+                                <Icon name="bookmark" size={20} color={Colors.light.success} />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity style={styles.registerButton}>
+                            <View style={styles.registerIconBadge}>
+                                <Icon name="add" size={18} color={Colors.light.success} />
+                            </View>
+                            <Text style={styles.registerButtonText}>Register a new batch</Text>
+                        </TouchableOpacity>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>My Breeds</Text>
+                            <TouchableOpacity>
+                                <Text style={styles.sectionAction}>View Breeds</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                }
+            />
         </View>
     );
 };
 
 export default Batch;
 
-// Styles remain mostly the same; add this if you want to use breedDescription later
 const styles = StyleSheet.create({
-    // ... your existing styles ...
-    breedDescription: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    // Optional: for future image additions
-    breedImage: {
-        width: '100%',
-        height: 150,
-        borderRadius: 12,
-        marginBottom: 12,
-    },
-    container: {
+    safeArea: {
         flex: 1,
-        backgroundColor: Colors.light.background || '#f8f9fa',
+        backgroundColor: Colors.light.background,
     },
-    pageTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 16,
-        // marginBottom: 10,
-        color: Colors.light.text,
+    listContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 32,
     },
-    sectionTitle: {
-        marginLeft: 20,
-        marginTop: 24,
-        marginBottom: 12,
-        color: Colors.light.text,
-        fontWeight: 'bold',
-        fontSize: 18,
+    pageHeader: {
+        paddingVertical: 16,
+        gap: 20,
     },
-    featuredCard: {
-        margin: 20,
-        padding: 20,
-        backgroundColor: Colors.light.topBackground || '#ffffff',
-        borderRadius: 16,
+    headerRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+        justifyContent: 'space-between',
     },
-    featuredTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.light.success,
-    },
-    featuredSubtitle: {
-        marginTop: 6,
-        color: '#666',
-        fontSize: 14,
-    },
-    statsContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 24,
-        gap: 16, // React Native 0.71+ supports gap
-    },
-    statItem: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
+    headerIconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ffffff',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        justifyContent: 'center',
+        shadowColor: '#0F172A',
         shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
         elevation: 3,
     },
-    breedName: {
+    title: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: Colors.light.text,
+    },
+    registerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.light.success,
+        borderRadius: 28,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+    },
+    registerIconBadge: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    registerButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.2,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    sectionTitle: {
         fontSize: 18,
         fontWeight: '700',
         color: Colors.light.text,
-        marginTop: 12,
-        marginBottom: 4,
     },
-    breedDescription: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
+    sectionAction: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: Colors.light.success,
     },
-    detailRow: {
+    batchCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 18,
+        shadowColor: '#0F172A',
+        shadowOpacity: 0.06,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    batchCardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
     },
-    detailLabel: {
-        fontSize: 14,
-        color: '#333',
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    batchInfo: {
+        flex: 1,
+    },
+    batchTitleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 16,
+    },
+    batchName: {
+        fontSize: 18,
         fontWeight: '700',
+        color: Colors.light.text,
     },
-    detailValue: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#474747',
+    statusPill: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        marginTop: 6,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: Colors.light.success,
+    },
+    batchMetaRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    metaItem: {
+        flex: 1,
+    },
+    metaLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.6,
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+    },
+    metaValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: Colors.light.text,
     },
 });
