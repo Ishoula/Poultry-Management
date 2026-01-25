@@ -3,13 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platfo
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Assuming already installed from previous code
 import DateTimePicker from '@react-native-community/datetimepicker';
 import UserNavbar from '../../components/UserNavbar'
+import { Colors } from '../../constants/colors';
  // Install via: npm install @react-native-community/datetimepicker
 // For iOS: npx pod-install
 
 const categories = [
-  { name: 'Feeding', icon: 'cloud' }, // Placeholder icon; adjust based on actual (screenshot shows hash? Maybe 'restaurant' for feeding)
-  { name: 'Cleaning', icon: 'cleaning-services' }, // Broom-like
-  { name: 'Health', icon: 'favorite' }, // Heart
+  { name: 'Feeding', icon: 'cloud', color:Colors.light.pending }, // Placeholder icon; adjust based on actual (screenshot shows hash? Maybe 'restaurant' for feeding)
+  { name: 'Cleaning', icon: 'cleaning-services',color:Colors.light.pending }, // Broom-like
+  { name: 'Health', icon: 'favorite', color:'#EF4444' }, // Heart
   { name: 'Environment', icon: 'eco' }, // Leaf
 ];
 

@@ -1,201 +1,261 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const breedsData = [
+const growthLogs = [
     {
         id: '1',
-        name: 'Broilers',
-        value: 'Rapid growth for meat',
-        date:'18 May 2024',
-        icon: 'invoice-list',
-        color: Colors.light.success,
+        title: 'Death',
+        value: '2 birds',
+        date: '18 May 2024',
+        note: 'Sudden loss due to extreme heat stress in Pen A.',
+        icon: 'heart-broken',
+        iconColor: '#EF4444',
     },
     {
         id: '2',
-        name: 'Layers',
-        value: 'Egg laying',
-        date:'18 June 2024',
-        avgMarketWeight: '1.8-2.5 kg',
-        icon: 'invoice-list',
-        color: Colors.light.success,
+        title: 'Diseases',
+        value: '12 birds isolated',
+        date: '15 May 2024',
+        note: 'Respiratory infection detected in Batch 4.',
+        icon: 'medication',
+        iconColor: '#F59E0B',
     },
     {
         id: '3',
-        name: 'Kuroilers',
-        value: 'Dual-purpose',
-        date:'18 July 2024',
-        avgMarketWeight: '3-3.5 kg',
-        icon: 'invoice-list',
-        color: Colors.light.success,
+        title: 'Sold',
+        value: '50 Kuroilers',
+        date: '10 May 2024',
+        note: 'Sold to Local Market Vendor at $4.50/kg.',
+        icon: 'storefront',
+        iconColor: '#3B82F6',
     },
 ];
 
-const Breeds = () => {
-    return (
-        <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <UserNavbar />
-
-                <Text style={styles.pageTitle}>Growth log</Text>
-
-                {/* Featured / Highlighted breed */}
-                <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your records</Text>
+const GrowthLogScreen = () => {
+    const renderLog = ({ item }) => (
+        <View style={styles.logCard}>
+            <View style={styles.cardHeader}>
+                <View style={styles.titleRow}>
+                    <View style={[styles.iconBadge, { backgroundColor: `${item.iconColor}1A` }]}> 
+                        <Icon name={item.icon} size={22} color={item.iconColor} />
+                    </View>
+                    <View style={styles.titleTextWrap}>
+                        <Text style={styles.logTitle}>{item.title}</Text>
+                        <Text style={styles.logMetaLabel}>Value</Text>
+                        <Text style={styles.logMetaValue}>{item.value}</Text>
+                    </View>
                 </View>
-
-                <View style={styles.statsContainer}>
-                    {breedsData.map((breed) => (
-                        <View key={breed.id} style={styles.statItem}>
-                            <MaterialCommunityIcons name={breed.icon} size={36} color={breed.color} />
-                            
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Event: </Text>
-                                <Text style={styles.detailValue}>{breed.name}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Value: </Text>
-                                <Text style={styles.detailValue}>{breed.value}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Date: </Text>
-                                <Text style={styles.detailValue}>{breed.date}</Text>
-                            </View>
-                        </View>
-                    ))}
-                </View> 
-
-                <TouchableOpacity
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 30,
-                        backgroundColor: Colors.light.topBackground,
-                        padding: 12,
-                        borderRadius: 10,
-                        marginHorizontal: 20,
-                    }}
-                    onPress={() => {
-                        // Add your logic here (e.g., navigate to add breed screen)
-                        console.log('Add breed tapped');
-                    }}
-                >
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8 }}>
-                        Add record
-                    </Text>
-                    <MaterialCommunityIcons name="plus" size={24} color={Colors.light.success} />
+                <TouchableOpacity>
+                    <Icon name="edit" size={18} color={Colors.light.icon} />
                 </TouchableOpacity>
-            </ScrollView>
+            </View>
+            <View style={styles.metaRow}>
+                <View style={styles.metaBlock}>
+                    <Text style={styles.metaLabel}>Date</Text>
+                    <Text style={styles.metaValue}>{item.date}</Text>
+                </View>
+            </View>
+            <Text style={styles.noteLabel}>Note:</Text>
+            <Text style={styles.noteText}>{item.note}</Text>
+        </View>
+    );
+
+    return (
+        <View style={styles.safeArea}>
+            <UserNavbar />
+            <FlatList
+                data={growthLogs}
+                renderItem={renderLog}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+                ListHeaderComponent={
+                    <View style={styles.pageHeader}>
+                        <View style={styles.headerRow}>
+                            <TouchableOpacity style={styles.headerIconButton}>
+                                <Icon name="arrow-back" size={20} color={Colors.light.text} />
+                            </TouchableOpacity>
+                            <Text style={styles.title}>Growth Log</Text>
+                            <View style={{ width: 40 }} />
+                        </View>
+                        <TouchableOpacity style={styles.addButton}>
+                            <View style={styles.addIconBadge}>
+                                <Icon name="add" size={18} color={Colors.light.success} />
+                            </View>
+                            <Text style={styles.addButtonText}>Add a record</Text>
+                        </TouchableOpacity>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>My records</Text>
+                            <Text style={styles.sectionMeta}>{`${growthLogs.length} Total`}</Text>
+                        </View>
+                    </View>
+                }
+            />
         </View>
     );
 };
 
-export default Breeds;
+export default GrowthLogScreen;
 
-// Styles remain mostly the same; add this if you want to use breedvalue later
 const styles = StyleSheet.create({
-    // ... your existing styles ...
-    breedvalue: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    // Optional: for future image additions
-    breedImage: {
-        width: '100%',
-        height: 150,
-        borderRadius: 12,
-        marginBottom: 12,
-    },
-    container: {
+    safeArea: {
         flex: 1,
-        backgroundColor: Colors.light.background || '#f8f9fa',
+        backgroundColor: Colors.light.background,
     },
-    pageTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 16,
-        // marginBottom: 10,
-        color: Colors.light.text,
+    listContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 32,
     },
-    sectionTitle: {
-        marginLeft: 20,
-        marginTop: 24,
-        marginBottom: 12,
-        color: Colors.light.text,
-        fontWeight: 'bold',
-        fontSize: 18,
+    pageHeader: {
+        paddingVertical: 16,
+        gap: 20,
     },
-    featuredCard: {
-        margin: 20,
-        padding: 20,
-        backgroundColor: Colors.light.topBackground || '#ffffff',
-        borderRadius: 16,
+    headerRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+        justifyContent: 'space-between',
     },
-    featuredTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.light.success,
-    },
-    featuredSubtitle: {
-        marginTop: 6,
-        color: '#666',
-        fontSize: 14,
-    },
-    statsContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 24,
-        gap: 16, // React Native 0.71+ supports gap
-    },
-    statItem: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
+    headerIconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ffffff',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        justifyContent: 'center',
+        shadowColor: '#0F172A',
         shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
         elevation: 3,
     },
-    breedName: {
+    title: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: Colors.light.text,
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.light.success,
+        borderRadius: 28,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+    },
+    addIconBadge: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    addButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.2,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    sectionTitle: {
         fontSize: 18,
         fontWeight: '700',
         color: Colors.light.text,
-        marginTop: 12,
-        marginBottom: 4,
     },
-    breedDescription: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
+    sectionMeta: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9CA3AF',
+        letterSpacing: 0.6,
     },
-    detailRow: {
+    logCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 18,
+        shadowColor: '#0F172A',
+        shadowOpacity: 0.06,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    cardHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        flex: 1,
+        marginRight: 12,
+    },
+    iconBadge: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 14,
+    },
+    titleTextWrap: {
+        flex: 1,
+    },
+    logTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: Colors.light.text,
+        marginBottom: 6,
+    },
+    logMetaLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.6,
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+    },
+    logMetaValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: Colors.light.text,
         marginTop: 4,
     },
-    detailLabel: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '700',
+    metaRow: {
+        flexDirection: 'row',
+        marginBottom: 12,
     },
-    detailValue: {
+    metaBlock: {
+        marginRight: 20,
+    },
+    metaLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+    },
+    metaValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: Colors.light.text,
+    },
+    noteLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+    },
+    noteText: {
         fontSize: 14,
-        fontWeight: '500',
-        color: '#474747',
+        color: '#6B7280',
+        lineHeight: 20,
     },
 });
