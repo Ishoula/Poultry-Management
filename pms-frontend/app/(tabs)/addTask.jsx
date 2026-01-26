@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Assuming already installed from previous code
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Platform,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import UserNavbar from '../../components/UserNavbar'
+import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
- // Install via: npm install @react-native-community/datetimepicker
-// For iOS: npx pod-install
 
 const categories = [
-  { name: 'Feeding', icon: 'cloud', color:Colors.light.pending }, // Placeholder icon; adjust based on actual (screenshot shows hash? Maybe 'restaurant' for feeding)
-  { name: 'Cleaning', icon: 'cleaning-services',color:Colors.light.pending }, // Broom-like
-  { name: 'Health', icon: 'favorite', color:'#EF4444' }, // Heart
-  { name: 'Environment', icon: 'eco' }, // Leaf
+  { name: 'Feeding', icon: 'restaurant', color: '#6ca502' },     // orange-amber for food
+  { name: 'Cleaning', icon: 'cleaning-services', color: '#6ca502' },
+  { name: 'Health', icon: 'healing', color: '#6ca502' },          // red for health/medical
+  { name: 'Environment', icon: 'eco', color: '#6ca502' },
 ];
 
-const priorities = ['Low', 'Medium', 'High'];
+const priorities = [
+  { label: 'Low', color: '#748152' },
+  { label: 'Medium', color: '#65b62f' },
+  { label: 'High', color: '#00c040ea' },
+];
 
 const NewTaskScreen = () => {
   const [taskName, setTaskName] = useState('');
@@ -27,49 +37,71 @@ const NewTaskScreen = () => {
   const [notes, setNotes] = useState('');
 
   const onDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === 'ios');
-    setDate(currentDate);
+    setShowDatePicker(false); // Close on Android immediately
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
   };
 
   const onTimeChange = (event, selectedTime) => {
-    const currentTime = selectedTime || time;
-    setShowTimePicker(Platform.OS === 'ios');
-    setTime(currentTime);
+    setShowTimePicker(false);
+    if (selectedTime) {
+      setTime(selectedTime);
+    }
   };
 
-  const formatDate = (date) => {
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  const formatDate = (d) => {
+    return d.toLocaleDateString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
-  const formatTime = (time) => {
-    let hours = time.getHours();
-    const minutes = time.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  const formatTime = (t) => {
+    return t.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   const handleSave = () => {
-    // TODO: Implement save logic, e.g., add to tasks list or API call
-    console.log({ taskName, selectedCategory, date: formatDate(date), time: formatTime(time), selectedPriority, notes });
-    // Navigate back or clear form
+    if (!taskName.trim()) {
+      // You can add alert / toast here
+      console.warn('Task name is required');
+      return;
+    }
+
+    const task = {
+      taskName,
+      category: selectedCategory,
+      date: formatDate(date),
+      time: formatTime(time),
+      priority: selectedPriority,
+      notes,
+    };
+
+    console.log('New Task:', task);
+    // TODO: Save to state / context / API / AsyncStorage / navigate back
   };
 
   return (
+  <>
+    <UserNavbar />
     <ScrollView style={styles.container}>
-
-        <UserNavbar/>
-      <Text style={styles.title}>New Task</Text>
       
+
+      <Text style={styles.title}>New Task</Text>
+
       <TextInput
         style={styles.input}
         placeholder="e.g. Clean the water tanks"
+        placeholderTextColor="#AAA"
         value={taskName}
         onChangeText={setTaskName}
       />
-      
+
       <Text style={styles.label}>Category</Text>
       <View style={styles.categoryContainer}>
         {categories.map((cat) => (
@@ -77,88 +109,101 @@ const NewTaskScreen = () => {
             key={cat.name}
             style={[
               styles.categoryButton,
-              selectedCategory === cat.name && styles.selectedCategory,
+              selectedCategory === cat.name && {
+                ...styles.selectedCategory, backgroundColor: `${Colors.light.success}10`,
+                borderColor: Colors.light.success,
+              },
             ]}
             onPress={() => setSelectedCategory(cat.name)}
           >
-            <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#FFF' : '#4CAF50'} />
-            <Text style={[
-              styles.categoryText,
-              selectedCategory === cat.name && styles.selectedCategoryText,
-            ]}>
+            <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#096b00' : cat.color} />
+            <Text
+              style={[
+                styles.categoryText,
+                { color: selectedCategory === cat.name ? '#096b00' : cat.color },
+              ]}
+            >
               {cat.name}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <View style={styles.dateTimeContainer}>
         <View style={styles.dateTimeItem}>
           <Text style={styles.label}>Date</Text>
           <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
-            <Text>{formatDate(date)}</Text>
+            <Text style={styles.pickerText}>{formatDate(date)}</Text>
             <Icon name="calendar-today" size={20} color="#757575" />
           </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-            />
-          )}
         </View>
+
         <View style={styles.dateTimeItem}>
           <Text style={styles.label}>Time</Text>
           <TouchableOpacity style={styles.pickerButton} onPress={() => setShowTimePicker(true)}>
-            <Text>{formatTime(time)}</Text>
+            <Text style={styles.pickerText}>{formatTime(time)}</Text>
             <Icon name="access-time" size={20} color="#757575" />
           </TouchableOpacity>
-          {showTimePicker && (
-            <DateTimePicker
-              value={time}
-              mode="time"
-              display="default"
-              onChange={onTimeChange}
-            />
-          )}
         </View>
       </View>
-      
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={onDateChange}
+        />
+      )}
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={time}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onTimeChange}
+        />
+      )}
+
       <Text style={styles.label}>Priority</Text>
       <View style={styles.priorityContainer}>
         {priorities.map((prio) => (
           <TouchableOpacity
-            key={prio}
+            key={prio.label}
             style={[
               styles.priorityButton,
-              selectedPriority === prio && styles.selectedPriority,
+              selectedPriority === prio.label && { ...styles.selectedPriority, backgroundColor: prio.color, borderColor: prio.color },
             ]}
-            onPress={() => setSelectedPriority(prio)}
+            onPress={() => setSelectedPriority(prio.label)}
           >
-            <Text style={[
-              styles.priorityText,
-              selectedPriority === prio && styles.selectedPriorityText,
-            ]}>
-              {prio}
+            <Text
+              style={[
+                styles.priorityText,
+                selectedPriority === prio.label && { color: '#FFF' },
+              ]}
+            >
+              {prio.label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <Text style={styles.label}>Notes</Text>
       <TextInput
         style={[styles.input, styles.notesInput]}
         placeholder="Add additional details about the task..."
+        placeholderTextColor="#AAA"
         value={notes}
         onChangeText={setNotes}
         multiline
+        numberOfLines={4}
       />
-      
+
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.buttonText}>Save Task</Text>
       </TouchableOpacity>
     </ScrollView>
+    </>
   );
 };
 
@@ -166,61 +211,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
-    padding: 16,
+    padding: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
+    color: '#333',
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 8,
+    color: '#444',
   },
   input: {
     borderWidth: 1,
     borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
     fontSize: 16,
+    backgroundColor: '#FAFAFA',
   },
   notesInput: {
-    height: 100,
+    height: 110,
     textAlignVertical: 'top',
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-    marginBottom: 8,
-    width: '48%', // Two per row
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+    width: '48%',
+    backgroundColor: '#F9F9F9',
   },
   selectedCategory: {
-    backgroundColor: '#4CAF50',
+    // dynamically set bg & border in render
   },
   categoryText: {
-    marginLeft: 8,
-    color: '#4CAF50',
-  },
-  selectedCategoryText: {
-    color: '#FFF',
+    marginLeft: 10,
+    fontSize: 15,
+    fontWeight: '500',
   },
   dateTimeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   dateTimeItem: {
     width: '48%',
@@ -231,42 +279,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#FAFAFA',
+  },
+  pickerText: {
+    fontSize: 16,
+    color: '#333',
   },
   priorityContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   priorityButton: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DDD',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
     alignItems: 'center',
     width: '30%',
+    backgroundColor: '#F9F9F9',
   },
   selectedPriority: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    // dynamic bg & border
   },
   priorityText: {
     fontSize: 16,
-  },
-  selectedPriorityText: {
-    color: '#FFF',
+    fontWeight: '500',
+    color: '#555',
   },
   saveButton: {
     backgroundColor: '#4CAF50',
-    padding: 16,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   buttonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
 });

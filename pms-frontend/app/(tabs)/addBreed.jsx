@@ -226,16 +226,29 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     inputShell: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    inputShellFocused: {
-        borderRadius: 0,
-    },
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',          // slightly lighter than before
+    borderWidth: 1,
+    borderColor: '#E5E7EB',              // light gray border by default
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+
+  inputShellFocused: {
+    borderWidth: 0,                      // ← hide border completely on focus
+    backgroundColor: '#F3F4F6',          // or keep same / make slightly darker
+
+  },
+
+  multilineShell: {
+    alignItems: 'flex-start',
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
+
+ 
     inputIcon: {
         marginRight: 12,
     },
@@ -245,11 +258,7 @@ const styles = StyleSheet.create({
         color: Colors.light.text,
         paddingVertical: 0,
     },
-    multilineShell: {
-        alignItems: 'flex-start',
-        paddingTop: 14,
-        paddingBottom: 14,
-    },
+    
     multilineInput: {
         minHeight: 96,
         textAlignVertical: 'top',

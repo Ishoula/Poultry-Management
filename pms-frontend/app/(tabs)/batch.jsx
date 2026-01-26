@@ -86,10 +86,8 @@ const Batch = () => {
                             <TouchableOpacity style={styles.headerIconButton}>
                                 <Icon name="arrow-back" size={20} color={Colors.light.text} />
                             </TouchableOpacity>
-                            <Text style={styles.title}>Batches</Text>
-                            <TouchableOpacity style={styles.headerIconButton}>
-                                <Icon name="bookmark" size={20} color={Colors.light.success} />
-                            </TouchableOpacity>
+                            <Text style={[styles.title, { position: 'absolute', left: 0, right: 0, textAlign: 'center' }]}>Batches</Text>
+                           
                         </View>
                         <TouchableOpacity style={styles.registerButton}>
                             <View style={styles.registerIconBadge}>
@@ -126,10 +124,18 @@ const styles = StyleSheet.create({
         gap: 20,
     },
     headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',      // only care about left side
+    position: 'relative',
+    width: '100%',
+},
+title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.text,
+    // textAlign: 'center' is not needed anymore when using absolute
+},
     headerIconButton: {
         width: 40,
         height: 40,
@@ -143,11 +149,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
-    title: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: Colors.light.text,
-    },
+
     registerButton: {
         flexDirection: 'row',
         alignItems: 'center',

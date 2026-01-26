@@ -1,295 +1,320 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    Platform,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 
 const eventOptions = [
-    { id: 'death', label: 'Death', icon: 'heart-broken', color: '#EF4444' },
-    { id: 'diseases', label: 'Diseases', icon: 'healing', color: '#F59E0B' },
-    { id: 'sold', label: 'Sold', icon: 'storefront', color: '#3B82F6' },
+    { id: 'death', label: 'Death ', icon: 'heart-broken', color: '#EF4444' },
+    { id: 'diseases', label: 'Disease ', icon: 'healing', color: '#F59E0B' },
+    { id: 'sold', label: 'Sold ', icon: 'storefront', color: '#3B82F6' },
     { id: 'vaccinated', label: 'Vaccinated', icon: 'vaccines', color: '#10B981' },
 ];
 
 const AddGrowthLog = () => {
-    const [selectedEvent, setSelectedEvent] = useState('death');
+    const [selectedEvent, setSelectedEvent] = useState(eventOptions[0].id);
     const [value, setValue] = useState('');
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [note, setNote] = useState('');
-    const [focusedField, setFocusedField] = useState(null);
 
-    const handleRegister = () => {
-        // TODO: Implement registration logic (e.g., API call)
-        console.log({
-            selectedEvent,
-            value,
-            date,
-            note,
-            
-        });
-        // Optionally navigate back or show success message
+    const formatDate = (inputDate) => {
+        if (!inputDate || !(inputDate instanceof Date) || isNaN(inputDate.getTime())) {
+            return 'Select date';
+        }
+        try {
+            return inputDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            });
+        } catch (err) {
+            console.warn('Date formatting failed:', err);
+            return 'Invalid date';
+        }
+    };
+
+    const onDateChange = (event, selectedDate) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
+            setDate(new Date(selectedDate));
+        }
+    };
+
+    const getValueLabel = () => {
+        switch (selectedEvent) {
+            case 'death': return 'Number of birds died';
+            case 'diseases': return 'Number affected / treated';
+            case 'sold': return 'Number sold / Total weight';
+            case 'vaccinated': return 'Number vaccinated';
+            default: return 'Value';
+        }
+    };
+
+    const getValuePlaceholder = () => {
+        switch (selectedEvent) {
+            case 'death': return 'e.g. 15';
+            case 'diseases': return 'e.g. 8 birds';
+            case 'sold': return 'e.g. 50 birds or 120 kg';
+            case 'vaccinated': return 'e.g. 200';
+            default: return 'e.g. 12 birds or 25 kg';
+        }
+    };
+
+    const handleSave = () => {
+        if (!value.trim()) {
+            console.warn('Please enter a value');
+            return;
+        }
+        const logEntry = {
+            eventType: selectedEvent,
+            value: value.trim(),
+            date: formatDate(date),
+            note: note.trim(),
+        };
+        console.log('New Growth Log:', logEntry);
+
     };
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
                 <UserNavbar />
+
                 <View style={styles.screenPadding}>
-                    <View style={styles.topBar}>
-                        <TouchableOpacity style={styles.navIconButton}>
-                            <Icon name="arrow-back" size={20} color={Colors.light.text} />
-                        </TouchableOpacity>
-                        <Text style={styles.topBarTitle}>Add Growth Record</Text>
+                    <Text style={styles.title}>Add Growth Record</Text>
+
+                    {/* EVENT TYPE - kept more pill-style, but you can simplify if needed */}
+                    <Text style={styles.label}>Event Type</Text>
+                    <View style={styles.eventGrid}>
+                        {eventOptions.map((option) => {
+                            const isActive = option.id === selectedEvent;
+                            return (
+                                <TouchableOpacity
+                                    key={option.id}
+                                    style={[
+                                        styles.eventPill,
+                                        isActive && { ...styles.eventPillActive },
+                                    ]}
+                                    onPress={() => {
+                                        setSelectedEvent(option.id);
+                                        setValue('');
+                                    }}
+                                >
+                                    <Icon name={option.icon} size={20} color={isActive ? Colors.light.success : option.color} />
+                                    <Text style={[styles.eventLabel, isActive && { color: Colors.light.success }]}>
+                                        {option.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
 
-                    <View style={styles.formCard}>
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Select Event Type</Text>
-                            <View style={styles.eventGrid}>
-                                {eventOptions.map((option) => {
-                                    const isActive = option.id === selectedEvent;
-                                    return (
-                                        <TouchableOpacity
-                                            key={option.id}
-                                            style={[styles.eventPill, isActive && styles.eventPillActive]}
-                                            onPress={() => setSelectedEvent(option.id)}
-                                        >
-                                            <View style={[styles.eventIconBadge, { backgroundColor: `${option.color}1A` }]}
-                                            >
-                                                <Icon
-                                                    name={option.icon}
-                                                    size={20}
-                                                    color={isActive ? Colors.light.success : option.color}
-                                                />
-                                            </View>
-                                            <Text style={[styles.eventLabel, isActive && styles.eventLabelActive]}>
-                                                {option.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        </View>
-
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Value</Text>
-                            <View style={[styles.inputShell, focusedField === 'value' && styles.inputShellFocused]}>
-                                <Icon name="tag" size={18} color={Colors.light.icon} style={styles.inputIcon} />
-                                <TextInput
-                                    style={styles.textInput}
-                                    value={value}
-                                    onChangeText={setValue}
-                                    placeholder="e.g., 12 birds or 25kg"
-                                    placeholderTextColor="#9CA3AF"
-                                    underlineColorAndroid="transparent"
-                                    onFocus={() => setFocusedField('value')}
-                                    onBlur={() => setFocusedField(null)}
-                                />
-                            </View>
-                        </View>
-
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Date</Text>
-                            <View style={[styles.inputShell, styles.inputShellBetween, focusedField === 'date' && styles.inputShellFocused]}>
-                                <View style={styles.inlineIconText}>
-                                    <Icon name="event" size={18} color={Colors.light.icon} style={styles.inputIcon} />
-                                    <TextInput
-                                        style={styles.textInput}
-                                        value={date}
-                                        onChangeText={setDate}
-                                        placeholder="MM/DD/YYYY"
-                                        placeholderTextColor="#9CA3AF"
-                                        underlineColorAndroid="transparent"
-                                        onFocus={() => setFocusedField('date')}
-                                        onBlur={() => setFocusedField(null)}
-                                    />
-                                </View>
-                                <Icon name="calendar-today" size={18} color={Colors.light.icon} />
-                            </View>
-                        </View>
-
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Note</Text>
-                            <View style={[styles.inputShell, styles.multilineShell, focusedField === 'note' && styles.inputShellFocused]}>
-                                <TextInput
-                                    style={[styles.textInput, styles.multilineInput]}
-                                    value={note}
-                                    onChangeText={setNote}
-                                    placeholder="Add an explanation or details here..."
-                                    placeholderTextColor="#9CA3AF"
-                                    multiline
-                                    numberOfLines={4}
-                                    underlineColorAndroid="transparent"
-                                    onFocus={() => setFocusedField('note')}
-                                    onBlur={() => setFocusedField(null)}
-                                />
-                            </View>
-                        </View>
-
-                        <TouchableOpacity style={styles.saveButton} onPress={handleRegister}>
-                            <Icon name="check" size={18} color="#ffffff" style={styles.saveIcon} />
-                            <Text style={styles.saveButtonText}>Save Record</Text>
-                        </TouchableOpacity>
+                    {/* VALUE */}
+                    <Text style={styles.label}>{getValueLabel()}</Text>
+                    <View style={styles.inputWrapper}>
+                        <TextInput
+                            style={styles.input}
+                            value={value}
+                            onChangeText={setValue}
+                            placeholder={getValuePlaceholder()}
+                            placeholderTextColor="#999"
+                        />
                     </View>
+
+                    {/* DATE */}
+                    <View style={styles.fieldGroup}>
+                        <Text style={styles.fieldLabel}>DATE</Text>
+                        <TouchableOpacity
+                            style={[
+                                styles.inputShell,
+
+                            ]}
+                            onPress={() => setShowDatePicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Icon
+                                name="event"
+                                size={20}
+                                color={Colors.light.icon || '#6B7280'}
+                                style={styles.inputIcon}
+                            />
+
+                            <Text
+                                style={[
+                                    styles.dateText,
+                                    !date || isNaN(date.getTime()) ? styles.datePlaceholder : null,
+                                ]}
+                            >
+                                {formatDate(date)}
+                            </Text>
+
+                            <Icon
+                                name="calendar-today"
+                                size={20}
+                                color={Colors.light.icon || '#6B7280'}
+                            />
+                        </TouchableOpacity>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                display="default"
+                                onChange={onDateChange}
+                            />
+                        )}
+                    </View>
+
+                    {/* NOTE */}
+                    <Text style={styles.label}>Note </Text>
+                    <View style={styles.inputWrapper}>
+                        <TextInput
+                            style={[styles.input, styles.notesInput]}
+                            value={note}
+                            onChangeText={setNote}
+                            placeholder="Symptoms, treatment used, buyer name, vaccine type, observations..."
+                            placeholderTextColor="#999"
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
+                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                        <Text style={styles.buttonText}>Save Record</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </View>
     );
 };
+
 export default AddGrowthLog;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light.background || '#f0f2f5',
+        backgroundColor: '#FFF',
     },
     scrollContent: {
         paddingBottom: 40,
     },
     screenPadding: {
-        paddingHorizontal: 20,
-        paddingBottom: 24,
+        padding: 20,
     },
-    topBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 12,
-        marginBottom: 20,
-    },
-    navIconButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#ffffff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.08,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    topBarTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: Colors.light.text,
-    },
-    formCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 24,
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.08,
-        shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 18,
-        elevation: 5,
-    },
-    fieldGroup: {
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
         marginBottom: 24,
+        color: '#333',
     },
-    fieldLabel: {
-        fontSize: 12,
-        fontWeight: '700',
-        letterSpacing: 1,
-        color: '#9CA3AF',
-        textTransform: 'uppercase',
-        marginBottom: 12,
+    label: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        color: '#444',
     },
+
+    inputWrapper: {
+        borderWidth: 1,
+        borderColor: '#DDD',
+        borderRadius: 8,
+        marginBottom: 20,
+        overflow: 'hidden',
+    },
+    input: {
+        padding: 12,
+        fontSize: 16,
+        color: '#333',
+    },
+    inputText: {
+        flex: 1,
+        padding: 12,
+        fontSize: 16,
+        color: '#333',
+    },
+    notesInput: {
+        height: 100,
+        textAlignVertical: 'top',
+    },
+
     eventGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        gap: 12,
+        marginBottom: 24,
     },
     eventPill: {
         width: '48%',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 18,
-        paddingVertical: 18,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'transparent',
-        gap: 12,
-    },
-    eventPillActive: {
-        borderColor: Colors.light.success,
-        backgroundColor: `${Colors.light.success}10`,
-    },
-    eventIconBadge: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#DDD',
+        marginBottom: 12,
+        gap: 8,
+        backgroundColor: '#f9f9f9',
+    },
+    eventPillActive: {
+         backgroundColor: `${Colors.light.success}10`,
+        borderColor: Colors.light.success,
+
     },
     eventLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#9CA3AF',
+        fontSize: 14,
+        color: '#555',
     },
-    eventLabelActive: {
-        color: Colors.light.success,
+
+    saveButton: {
+        backgroundColor: Colors.light.success,
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    buttonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     inputShell: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: '#F8FAFC',
         borderRadius: 16,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+
     },
-    inputShellBetween: {
-        justifyContent: 'space-between',
-    },
-    inputShellFocused: {
-        borderRadius: 0,
-    },
+
     inputIcon: {
         marginRight: 12,
     },
-    inlineIconText: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    textInput: {
+
+    dateText: {
         flex: 1,
         fontSize: 16,
-        color: Colors.light.text,
-        paddingVertical: 0,
+        color: Colors.light.text || '#111827',
+
     },
-    multilineShell: {
-        alignItems: 'flex-start',
-        paddingTop: 14,
-        paddingBottom: 14,
-    },
-    multilineInput: {
-        minHeight: 96,
-        textAlignVertical: 'top',
-    },
-    saveButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.light.success,
-        borderRadius: 28,
-        paddingVertical: 16,
-        marginTop: 12,
-        shadowColor: '#1A472A',
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 12,
-        elevation: 4,
-    },
-    saveIcon: {
-        marginRight: 8,
-    },
-    saveButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: 0.2,
+
+    datePlaceholder: {
+        color: '#9CA3AF',
+        fontStyle: 'italic',
     },
 });
-
