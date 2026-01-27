@@ -14,10 +14,10 @@ import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 
 const categories = [
-  { name: 'Feeding', icon: 'restaurant', color: '#6ca502' },     // orange-amber for food
-  { name: 'Cleaning', icon: 'cleaning-services', color: '#6ca502' },
-  { name: 'Health', icon: 'healing', color: '#6ca502' },          // red for health/medical
-  { name: 'Environment', icon: 'eco', color: '#6ca502' },
+  { name: 'Feeding', icon: 'restaurant' },     // orange-amber for food
+  { name: 'Cleaning', icon: 'cleaning-services'},
+  { name: 'Health', icon: 'healing' },          // red for health/medical
+  { name: 'Environment', icon: 'eco'},
 ];
 
 const priorities = [
@@ -116,11 +116,11 @@ const NewTaskScreen = () => {
             ]}
             onPress={() => setSelectedCategory(cat.name)}
           >
-            <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#096b00' : cat.color} />
+            <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#096b00' :'#5c5c5c'} />
             <Text
               style={[
                 styles.categoryText,
-                { color: selectedCategory === cat.name ? '#096b00' : cat.color },
+                { color: selectedCategory === cat.name ? '#096b00' : '#5c5c5c'},
               ]}
             >
               {cat.name}

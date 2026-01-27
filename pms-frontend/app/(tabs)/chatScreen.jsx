@@ -10,18 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Colors } from '../../constants/colors'; // Assuming this exists
-import community from '../../assets/images/racoo.jpeg'; // Reuse from previous
-
-// Mock avatars (replace with actual imports)
-
+import { Colors } from '../../constants/colors'; 
+import community from '../../assets/images/racoo.jpeg';
 import shoula from '../../assets/images/shoula.jpg';
 import agdede from '../../assets/images/racoo.jpeg';
 import pasca from '../../assets/images/loveOfMyLife.jpg';
 import sema from '../../assets/images/IMG-20250506-WA0007.jpg';
 
-
-// Mock chat messages (left-aligned for others)
 const chatMessages = [
   {
     id: '1',
@@ -52,7 +47,7 @@ const chatMessages = [
     message: "I have a few crates left if you're interested.",
     isMe: false,
   },
-  // Add more or fetch from API
+  
 ];
 
 const ChatScreen = ({ navigation }) => {
@@ -66,13 +61,13 @@ const ChatScreen = ({ navigation }) => {
         {
           id: Date.now().toString(),
           sender: 'You',
-          avatar: null, // Or your avatar
+          avatar: null, 
           message: message.trim(),
           isMe: true,
         },
       ]);
       setMessage('');
-      // TODO: Send to backend
+      
     }
   };
 
@@ -110,7 +105,7 @@ const ChatScreen = ({ navigation }) => {
 
       {/* Chat List */}
       <FlatList
-        inverted // New messages at bottom
+        // inverted // New messages at bottom
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}

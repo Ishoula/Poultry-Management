@@ -27,6 +27,7 @@ const AddGrowthLog = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [note, setNote] = useState('');
 
+    const selectedOption = eventOptions.find(opt => opt.id === selectedEvent);
     const formatDate = (inputDate) => {
         if (!inputDate || !(inputDate instanceof Date) || isNaN(inputDate.getTime())) {
             return 'Select date';
@@ -110,8 +111,8 @@ const AddGrowthLog = () => {
                                         setValue('');
                                     }}
                                 >
-                                    <Icon name={option.icon} size={20} color={isActive ? Colors.light.success : option.color} />
-                                    <Text style={[styles.eventLabel, isActive && { color: Colors.light.success }]}>
+                                    <Icon name={option.icon} size={24} color={isActive ? selectedOption?.color : '#5c5c5c'} />
+                                    <Text style={[styles.eventLabel, isActive && { color: isActive ? selectedOption?.color : '#5c5c5c' }]}>
                                         {option.label}
                                     </Text>
                                 </TouchableOpacity>

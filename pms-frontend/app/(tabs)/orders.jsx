@@ -1,100 +1,106 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const ordersData = [
     {
         id: '1',
         name: 'Shoula',
-        breedType: 'Boilers',
-        basis:'Per kg',
+        code: '#SP-2041',
+        breedType: 'Broilers',
+        basis: 'Per Kilogram',
         quantity: '25kg',
-        price: '50000 FRW',
-        icon: 'cart',
-        color: Colors.light.success,
+        price: '50,000 FRW',
+        status: 'Delivered',
     },
     {
         id: '2',
         name: 'Delight',
-        breedType: 'Layers',
-        basis:'Per kg',
-        quantity: '20kg',
-        price: '40000 FRW',
-        icon: 'cart',
-        color: Colors.light.success,
-    },
-    {
-        id: '3',
-        name: 'Pasca',
+        code: '#SP-2042',
         breedType: 'Kuroilers',
-        basis:'Per chicken',
-        quantity: '15 chicken',
-        price: '30000 FRW',
-        icon: 'cart',
-        color: Colors.light.success,
+        basis: 'Per Chicken',
+        quantity: '25 Chicken',
+        price: '50,000 FRW',
+        status: 'Pending',
     },
 ];
 
 const Orders = () => {
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <UserNavbar />
 
-                <Text style={styles.pageTitle}>Orders</Text>
+                <View style={styles.headerSection}>
+                    <Text style={styles.pageTitle}>Orders</Text>
+                    <Text style={styles.pageSubtitle}>Manage your poultry sales and deliveries</Text>
 
-                {/* Featured / Highlighted breed */}
-                <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your orders</Text>
+                    <TouchableOpacity style={styles.primaryCta}>
+                        <Ionicons name="add-circle" size={20} color={Colors.light.topBackground} style={styles.ctaIcon} />
+                        <Text style={styles.primaryCtaLabel}>Add New Order</Text>
+                    </TouchableOpacity>
                 </View>
 
-                <View style={styles.statsContainer}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Latest Orders</Text>
+                    <TouchableOpacity>
+                        <Text style={styles.sectionAction}>View All</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.cardsStack}>
                     {ordersData.map((order) => (
-                        <View key={order.id} style={styles.statItem}>
-                            <MaterialCommunityIcons name={order.icon} size={24} color={order.color} />
-                            <Text style={styles.breedName}>{order.name}</Text>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Breed Type: </Text>
-                                <Text style={styles.detailValue}>{order.breedType}</Text>
+                        <View key={order.id} style={styles.orderCard}>
+                            <View style={styles.cardHeader}>
+                                <View style={styles.avatar}>
+                                    <Ionicons name="cube" size={20} color={Colors.light.success} />
+                                </View>
+                                <View style={styles.cardTitleBlock}>
+                                    <Text style={styles.orderName}>{order.name}</Text>
+                                    <Text style={styles.orderCode}>ORDER {order.code}</Text>
+                                </View>
+                                <View style={[styles.statusPill, order.status === 'Delivered' ? styles.statusDelivered : styles.statusPending]}>
+                                    <Text style={[styles.statusLabel, order.status === 'Delivered' ? styles.statusDeliveredLabel : styles.statusPendingLabel]}>
+                                        {order.status}
+                                    </Text>
+                                </View>
                             </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Basis: </Text>
-                                <Text style={styles.detailValue}>{order.basis}</Text>
+
+                            <View style={styles.metaGrid}>
+                                <View style={styles.metaColumn}>
+                                    <Text style={styles.metaLabel}>Breed Type</Text>
+                                    <Text style={styles.metaValue}>{order.breedType}</Text>
+                                </View>
+                                <View style={styles.metaColumn}>
+                                    <Text style={styles.metaLabel}>Basis</Text>
+                                    <Text style={styles.metaValue}>{order.basis}</Text>
+                                </View>
                             </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Quantity: </Text>
-                                <Text style={styles.detailValue}>{order.quantity}</Text>
+
+                            <View style={styles.metaGrid}>
+                                <View style={styles.metaColumn}>
+                                    <Text style={styles.metaLabel}>Quantity</Text>
+                                    <Text style={styles.metaValue}>{order.quantity}</Text>
+                                </View>
+                                <View style={styles.metaColumn}>
+                                    <Text style={styles.metaLabel}>Total Price</Text>
+                                    <Text style={styles.metaValue}>{order.price}</Text>
+                                </View>
                             </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Price: </Text>
-                                <Text style={styles.detailValue}>{order.price}</Text>
-                            </View>
+
+                            {order.status === 'Pending' && (
+                                <TouchableOpacity style={styles.secondaryCta}>
+                                    <Ionicons name="checkmark-circle" size={20} color={Colors.light.topBackground} style={styles.ctaIcon} />
+                                    <Text style={styles.secondaryCtaLabel}>Mark Delivered</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     ))}
-                </View> 
+                </View>
 
-                <TouchableOpacity
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 30,
-                        backgroundColor: Colors.light.topBackground,
-                        padding: 12,
-                        borderRadius: 10,
-                        marginHorizontal: 20,
-                    }}
-                    onPress={() => {
-                        // Add your logic here (e.g., navigate to add breed screen)
-                        console.log('Add orderr tapped');
-                    }}
-                >
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize:18 }}>
-                        Add order
-                    </Text>
-                    <MaterialCommunityIcons name="cart-plus" size={24} color={Colors.light.success} />
-                </TouchableOpacity>
+                <Text style={styles.footerNote}>End of recent orders</Text>
             </ScrollView>
         </View>
     );
@@ -103,100 +109,175 @@ const Orders = () => {
 export default Orders;
 
 const styles = StyleSheet.create({
-    
-    breedType: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-  
     container: {
         flex: 1,
-        backgroundColor: Colors.light.background || '#f8f9fa',
+        backgroundColor: Colors.light.background,
+    },
+    scrollContent: {
+        paddingBottom: 48,
+    },
+    headerSection: {
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        paddingBottom: 16,
+        gap: 12,
     },
     pageTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 16,
-        // marginBottom: 10,
-        color: Colors.light.text,
-    },
-    sectionTitle: {
-        marginLeft: 20,
-        marginTop: 24,
-        marginBottom: 12,
-        color: Colors.light.text,
-        fontWeight: 'bold',
-        fontSize: 18,
-    },
-    featuredCard: {
-        margin: 20,
-        padding: 20,
-        backgroundColor: Colors.light.topBackground || '#ffffff',
-        borderRadius: 16,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    featuredTitle: {
-        fontFamily: 'Roboto',
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.light.success,
-    },
-    featuredSubtitle: {
-        marginTop: 6,
-        color: '#666',
-        fontSize: 14,
-    },
-    statsContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 24,
-        gap: 16,
-    },
-    statItem: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    breedName: {
-        fontSize: 18,
+        fontSize: 32,
         fontWeight: '700',
         color: Colors.light.text,
-        marginTop: 12,
-        marginBottom: 4,
     },
-    breedType: {
-        fontSize: 15,
-        color: '#555',
-        marginBottom: 12,
-        textAlign: 'center',
+    pageSubtitle: {
+        fontSize: 16,
+        color: Colors.light.textMuted,
     },
-    detailRow: {
+    primaryCta: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
+        justifyContent: 'center',
+        backgroundColor: Colors.light.success,
+        borderRadius: 16,
+        height: 52,
+        gap: 8,
+        shadowColor: '#1A472A66',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 4,
     },
-    detailLabel: {
+    primaryCtaLabel: {
+        color: Colors.light.topBackground,
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.2,
+    },
+    ctaIcon: {
+        marginRight: 2,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    sectionTitle: {
         fontSize: 18,
-        color: '#333',
         fontWeight: '700',
+        color: Colors.light.text,
     },
-    detailValue: {
+    sectionAction: {
+        fontSize: 14,
+        color: Colors.light.success,
+        fontWeight: '600',
+    },
+    cardsStack: {
+        gap: 18,
+        paddingHorizontal: 24,
+    },
+    orderCard: {
+        backgroundColor: Colors.light.topBackground,
+        borderRadius: 20,
+        padding: 18,
+        gap: 16,
+        shadowColor: '#1A202C0F',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.08,
+        shadowRadius: 20,
+        elevation: 6,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    avatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 16,
+        backgroundColor: Colors.light.successSoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardTitleBlock: {
+        flex: 1,
+        gap: 4,
+    },
+    orderName: {
         fontSize: 18,
-        fontWeight: '500',
-        color: '#474747',
+        fontWeight: '700',
+        color: Colors.light.text,
+    },
+    orderCode: {
+        fontSize: 13,
+        letterSpacing: 0.4,
+        color: Colors.light.textMuted,
+    },
+    statusPill: {
+        borderRadius: 999,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+    },
+    statusDelivered: {
+        backgroundColor: Colors.light.successSoft,
+    },
+    statusDeliveredLabel: {
+        color: Colors.light.success,
+    },
+    statusPending: {
+        backgroundColor: Colors.light.pendingSoft,
+    },
+    statusPendingLabel: {
+        color: Colors.light.pending,
+    },
+    statusLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    metaGrid: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    metaColumn: {
+        flex: 1,
+        backgroundColor: '#F7F9FC',
+        borderRadius: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        gap: 6,
+    },
+    metaLabel: {
+        fontSize: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        color: Colors.light.textMuted,
+        fontWeight: '600',
+    },
+    metaValue: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.light.text,
+    },
+    secondaryCta: {
+        marginTop: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.light.success,
+        borderRadius: 14,
+        height: 48,
+        gap: 8,
+    },
+    secondaryCtaLabel: {
+        color: Colors.light.topBackground,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    footerNote: {
+        marginTop: 24,
+        textAlign: 'center',
+        color: Colors.light.textMuted,
+        fontSize: 13,
     },
 });

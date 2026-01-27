@@ -6,11 +6,14 @@ const tintColorDark = '#e0a500ff';
 export const Colors = {
   light: {
     text: '#000000',
+    textMuted: '#6C7A91',
     background: '#F4F3F3',
     topBackground: '#FFFFFF',
     success: '#1a472a',
     cart:'#2393fc',
     pending:'#FBAC4F',
+    successSoft: '#EEF9F0',
+    pendingSoft: '#FFF4E7',
     lightSuccess:'#EFFFEE',
     headerBackground:'rgb(242,242,242)',
     tint: tintColorLight,
