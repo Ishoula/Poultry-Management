@@ -1,16 +1,50 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 
 const tasksData = [
-    { id: '1', title: 'Give chicken water', completed: true },
-    { id: '2', title: 'Give chicken food', completed: true },
-    { id: '3', title: 'Clean the coop', completed: false },
-    { id: '4', title: 'Vaccinate Batch 4', completed: false },
-    { id: '5', title: 'Review temperature', completed: false },
+    {
+        id: '1',
+        title: 'Clean the water tanks',
+        category: 'Cleaning',
+        time: '08:00 AM',
+        priority: 'High',
+        completed: false,
+    },
+    {
+        id: '2',
+        title: 'Morning Feeding',
+        category: 'Feeding',
+        time: '07:00 AM',
+        priority: 'Medium',
+        completed: false,
+    },
+    {
+        id: '3',
+        title: 'Temperature Check',
+        category: 'Environment',
+        time: '06:00 AM',
+        priority: 'Low',
+        completed: true,
+    },
+    {
+        id: '4',
+        title: 'Vaccination - Batch A',
+        category: 'Health',
+        time: '10:30 AM',
+        priority: 'High',
+        completed: false,
+    },
 ];
+
+const priorityStyles = {
+    High: { bg: Colors.light.priorityHighBg, color: Colors.light.priorityHigh },
+    Medium: { bg: Colors.light.priorityMediumBg, color: Colors.light.priorityMedium },
+    Low: { bg: Colors.light.priorityLowBg, color: Colors.light.priorityLow },
+};
 
 const TasksScreen = () => {
     const [tasks, setTasks] = useState(tasksData);
@@ -21,63 +55,59 @@ const TasksScreen = () => {
         );
     };
 
-    const renderTask = ({ item }) => {
-        const isCompleted = item.completed;
-
-        return (
-            <View style={styles.taskCard}>
-                <TouchableOpacity
-                    style={[styles.statusBadge, isCompleted ? styles.statusBadgeCompleted : styles.statusBadgePending]}
-                    onPress={() => toggleTask(item.id)}
-                >
-                    {isCompleted && <Icon name="check" size={18} color="#ffffff" />}
-                </TouchableOpacity>
-                <View style={styles.taskInfo}>
-                    <Text style={[styles.taskTitle, isCompleted && styles.taskTitleCompleted]}>{item.title}</Text>
-                </View>
-                <View style={styles.actions}>
-                    <TouchableOpacity style={[styles.actionButton, styles.editButton]}>
-                        <Icon name="edit" size={18} color={Colors.light.icon} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionButton, styles.deleteButton]}>
-                        <Icon name="delete" size={18} color="#EF4444" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    };
-
     return (
-        <View style={styles.safeArea}>
-            <UserNavbar />
-            <FlatList
-                data={tasks}
-                renderItem={renderTask}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
-                ListHeaderComponent={
-                    <View style={styles.pageHeader}>
-                        <Text style={styles.title}>Tasks</Text>
-                        <Text style={styles.subtitle}>Manage your daily farm activities</Text>
-                        <TouchableOpacity style={styles.createButton}>
-                            <View style={styles.createButtonIcon}>
-                                <Icon name="add" size={20} color="#ffffff" />
-                            </View>
-                            <Text style={styles.createButtonText}>Create task</Text>
-                        </TouchableOpacity>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <UserNavbar />
+
+                <View style={styles.bodyWrapper}>
+                    <Text style={styles.pageTitle}>Tasks</Text>
+                    <Text style={styles.pageSubtitle}>Manage your poultry routines and stay ahead of chores.</Text>
+
+                    <View style={styles.tasksStack}>
+                        {tasks.map((task) => {
+                            const isCompleted = task.completed;
+                            const badgeStyle = priorityStyles[task.priority];
+
+                            return (
+                                <View key={task.id} style={[styles.taskCard, isCompleted && styles.taskCardDone]}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.checkbox,
+                                            isCompleted ? styles.checkboxChecked : styles.checkboxDefault,
+                                        ]}
+                                        onPress={() => toggleTask(task.id)}
+                                    >
+                                        {isCompleted && <Ionicons name="checkmark" size={18} color={Colors.light.topBackground} />}
+                                    </TouchableOpacity>
+
+                                    <View style={styles.cardContent}>
+                                        <Text style={[styles.taskTitle, isCompleted && styles.taskTitleDone]}>{task.title}</Text>
+                                        <View style={styles.metaRow}>
+                                            <View style={styles.metaGroup}>
+                                                <Ionicons name="pricetag-outline" size={16} color={Colors.light.icon} />
+                                                <Text style={styles.metaText}>{task.category}</Text>
+                                            </View>
+                                            <View style={styles.metaGroup}>
+                                                <Ionicons name="time-outline" size={16} color={Colors.light.icon} />
+                                                <Text style={styles.metaText}>{task.time}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+
+                                    <View style={[styles.priorityBadge, { backgroundColor: badgeStyle.bg }]}>
+                                        <Text style={[styles.priorityLabel, { color: badgeStyle.color }]}>{task.priority}</Text>
+                                    </View>
+                                </View>
+                            );
+                        })}
                     </View>
-                }
-                ListFooterComponent={
-                    <TouchableOpacity style={styles.frequencyCard}>
-                        <View style={styles.frequencyIconWrap}>
-                            <Icon name="schedule" size={20} color={Colors.light.success} />
-                        </View>
-                        <Text style={styles.frequencyText}>Set task frequency</Text>
-                        <Icon name="chevron-right" size={22} color={Colors.light.icon} />
-                    </TouchableOpacity>
-                }
-            />
+                </View>
+            </ScrollView>
+
+            <TouchableOpacity style={styles.fab}>
+                <Ionicons name="add" size={28} color={Colors.light.topBackground} />
+            </TouchableOpacity>
         </View>
     );
 };
@@ -85,145 +115,114 @@ const TasksScreen = () => {
 export default TasksScreen;
 
 const styles = StyleSheet.create({
-    safeArea: {
+    container: {
         flex: 1,
         backgroundColor: Colors.light.background,
     },
-    listContent: {
-        paddingHorizontal: 20,
+    scrollContent: {
         paddingBottom: 32,
-        paddingTop: 8,
     },
-    pageHeader: {
+    bodyWrapper: {
+        paddingHorizontal: 20,
         paddingTop: 16,
-        marginBottom: 12,
+        gap: 18,
     },
-    title: {
-        fontSize: 24,
+    pageTitle: {
+        fontSize: 32,
         fontWeight: '700',
         color: Colors.light.text,
     },
-    subtitle: {
-        fontSize: 14,
-        color: '#6B7280',
-        lineHeight: 20,
+    pageSubtitle: {
+        fontSize: 15,
+        color: Colors.light.textMuted,
+        lineHeight: 22,
     },
-    createButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.light.success,
-        borderRadius: 28,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.12,
-        shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 18,
-        elevation: 5,
-    },
-    createButtonIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    createButtonText: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#ffffff',
-        letterSpacing: 0.2,
+    tasksStack: {
+        gap: 12,
     },
     taskCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#ffffff',
-        borderRadius: 20,
-        paddingVertical: 16,
-        paddingHorizontal: 18,
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.05,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 12,
-        elevation: 3,
-        marginBottom: 12,
+        backgroundColor: Colors.light.topBackground,
+        borderRadius: 18,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        shadowColor: '#1A202C0F',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
     },
-    statusBadge: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+    taskCardDone: {
+        opacity: 0.75,
+    },
+    checkbox: {
+        width: 34,
+        height: 34,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 14,
     },
-    statusBadgeCompleted: {
+    checkboxDefault: {
+        borderWidth: 2,
+        borderColor: '#C9D3DF',
+    },
+    checkboxChecked: {
         backgroundColor: Colors.light.success,
     },
-    statusBadgePending: {
-        borderWidth: 2,
-        borderColor: '#D1D5DB',
-        backgroundColor: Colors.light.background,
-    },
-    taskInfo: {
+    cardContent: {
         flex: 1,
+        gap: 4,
     },
     taskTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: Colors.light.text,
     },
-    taskTitleCompleted: {
-        color: '#6B7280',
+    taskTitleDone: {
+        color: '#94A3B8',
+        textDecorationLine: 'line-through',
     },
-    actions: {
+    metaRow: {
+        flexDirection: 'row',
+        gap: 14,
+        alignItems: 'center',
+    },
+    metaGroup: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginLeft: 12,
+        gap: 6,
     },
-    actionButton: {
-        width: 38,
-        height: 38,
+    metaText: {
+        fontSize: 13,
+        color: '#6C7A91',
+    },
+    priorityBadge: {
         borderRadius: 12,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
     },
-    editButton: {
-        backgroundColor: '#E5E7EB',
-        marginLeft: 0,
+    priorityLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
     },
-    deleteButton: {
-        backgroundColor: '#FEE2E2',
-    },
-    frequencyCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E5F3EA',
-        borderRadius: 18,
-        paddingHorizontal: 18,
-        paddingVertical: 16,
-        marginTop: 8,
-    },
-    frequencyIconWrap: {
-        width: 40,
-        height: 40,
+    fab: {
+        position: 'absolute',
+        bottom: 32,
+        right: 24,
+        width: 58,
+        height: 58,
         borderRadius: 20,
-        backgroundColor: 'rgba(26,71,42,0.12)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
-    },
-    frequencyText: {
-        flex: 1,
-        fontSize: 15,
-        fontWeight: '600',
-        color: Colors.light.success,
-    },
-    footerSpacing: {
-        marginTop: 12,
+        backgroundColor: Colors.light.success,
+        shadowColor: '#1A472A44',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 6,
     },
 });

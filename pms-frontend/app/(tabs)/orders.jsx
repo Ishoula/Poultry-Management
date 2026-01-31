@@ -1,299 +1,403 @@
-// TasksScreen.js
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-// For demo — replace with real date logic later
-const todayIndex = 1; // TUE
+import UserNavbar from '../../components/UserNavbar';
 
-const initialTasks = [
-  {
-    id: '1',
-    title: 'Clean the water tanks',
-    time: '08:00 AM',
-    priority: 'HIGH',
-    category: 'Cleaning',
-    completed: false,
-  },
-  {
-    id: '2',
-    title: 'Morning Feeding',
-    time: '07:00 AM',
-    priority: 'MEDIUM',
-    category: 'Feeding',
-    completed: false,
-  },
-  {
-    id: '3',
-    title: 'Temperature Check',
-    time: '',
-    priority: 'LOW',
-    category: 'Environment',
-    completed: true,
-  },
-  {
-    id: '4',
-    title: 'Vaccination - Batch A',
-    time: '10:30 AM',
-    priority: 'HIGH',
-    category: 'Health',
-    completed: false,
-  },
+import { Colors } from '../../constants/colors';
+
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+
+
+const ordersData = [
+
+    {
+
+        id: '1',
+
+        name: 'Shoula',
+
+        breedType: 'Boilers',
+
+        basis:'Per kg',
+
+        quantity: '25kg',
+
+        price: '50000 FRW',
+
+        icon: 'cart',
+
+        color: Colors.light.success,
+
+    },
+
+    {
+
+        id: '2',
+
+        name: 'Delight',
+
+        breedType: 'Layers',
+
+        basis:'Per kg',
+
+        quantity: '20kg',
+
+        price: '40000 FRW',
+
+        icon: 'cart',
+
+        color: Colors.light.success,
+
+    },
+
+    {
+
+        id: '3',
+
+        name: 'Pasca',
+
+        breedType: 'Kuroilers',
+
+        basis:'Per chicken',
+
+        quantity: '15 chicken',
+
+        price: '30000 FRW',
+
+        icon: 'cart',
+
+        color: Colors.light.success,
+
+    },
+
 ];
 
-const priorityStyles = {
-  HIGH: { backgroundColor: '#dc2626', color: 'white' },
-  MEDIUM: { backgroundColor: '#d97706', color: 'white' },
-  LOW: { backgroundColor: '#059669', color: 'white' },
-};
 
-// Ionicons names that fit reasonably well
-const categoryIcons = {
-  Cleaning: 'water-outline',           // or 'trash-outline', 'sparkles-outline'
-  Feeding: 'restaurant-outline',        // or 'leaf-outline', 'nutrition-outline'
-  Environment: 'thermometer-outline',
-  Health: 'medkit-outline',             // or 'bandage-outline', 'heart-outline'
-  // fallback
-  default: 'time-outline',
-};
 
-export default function TasksScreen() {
-  const [tasks, setTasks] = useState(initialTasks);
-
-  const toggleComplete = (id) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
-
-  const renderTask = ({ item }) => {
-    const iconName = categoryIcons[item.category] || categoryIcons.default;
-    const prioStyle = priorityStyles[item.priority] || priorityStyles.LOW;
+const Orders = () => {
 
     return (
-      <View style={styles.taskCard}>
-        <Pressable
-          onPress={() => toggleComplete(item.id)}
-          style={({ pressed }) => [
-            styles.checkbox,
-            item.completed && styles.checkboxDone,
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          {item.completed && (
-            <Ionicons name="checkmark" size={18} color="white" />
-          )}
-        </Pressable>
 
-        <View style={styles.taskInfo}>
-          <Text
-            style={[
-              styles.taskName,
-              item.completed && styles.taskNameDone,
-            ]}
-          >
-            {item.title}
-          </Text>
+        <View style={styles.container}>
 
-          <View style={styles.metaRow}>
-            {item.time ? (
-              <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={14} color="#64748b" />
-                <Text style={styles.metaText}>{item.time}</Text>
-              </View>
-            ) : null}
+            <ScrollView showsVerticalScrollIndicator={false}>
 
-            <View style={styles.metaItem}>
-              <Ionicons name={iconName} size={14} color="#64748b" />
-              <Text style={styles.metaText}>{item.category}</Text>
-            </View>
+                <UserNavbar />
 
-            <View style={[styles.priorityTag, { backgroundColor: prioStyle.backgroundColor }]}>
-              <Text style={[styles.priorityLabel, { color: prioStyle.color }]}>
-                {item.priority}
-              </Text>
-            </View>
-          </View>
+
+
+                <Text style={styles.pageTitle}>Orders</Text>
+
+
+
+                {/* Featured / Highlighted breed */}
+
+                <View style={styles.featuredCard}>
+
+                    <Text style={styles.featuredTitle}>Your orders</Text>
+
+                </View>
+
+
+
+                <View style={styles.statsContainer}>
+
+                    {ordersData.map((order) => (
+
+                        <View key={order.id} style={styles.statItem}>
+
+                            <MaterialCommunityIcons name={order.icon} size={24} color={order.color} />
+
+                            <Text style={styles.breedName}>{order.name}</Text>
+
+                            <View style={styles.detailRow}>
+
+                                <Text style={styles.detailLabel}>Breed Type: </Text>
+
+                                <Text style={styles.detailValue}>{order.breedType}</Text>
+
+                            </View>
+
+                            <View style={styles.detailRow}>
+
+                                <Text style={styles.detailLabel}>Basis: </Text>
+
+                                <Text style={styles.detailValue}>{order.basis}</Text>
+
+                            </View>
+
+                            <View style={styles.detailRow}>
+
+                                <Text style={styles.detailLabel}>Quantity: </Text>
+
+                                <Text style={styles.detailValue}>{order.quantity}</Text>
+
+                            </View>
+
+                            <View style={styles.detailRow}>
+
+                                <Text style={styles.detailLabel}>Price: </Text>
+
+                                <Text style={styles.detailValue}>{order.price}</Text>
+
+                            </View>
+
+                        </View>
+
+                    ))}
+
+                </View> 
+
+
+
+                <TouchableOpacity
+
+                    style={{
+
+                        flexDirection: 'row',
+
+                        alignItems: 'center',
+
+                        justifyContent: 'center',
+
+                        marginBottom: 30,
+
+                        backgroundColor: Colors.light.topBackground,
+
+                        padding: 12,
+
+                        borderRadius: 10,
+
+                        marginHorizontal: 20,
+
+                    }}
+
+                    onPress={() => {
+
+                        // Add your logic here (e.g., navigate to add breed screen)
+
+                        console.log('Add orderr tapped');
+
+                    }}
+
+                >
+
+                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize:18 }}>
+
+                        Add order
+
+                    </Text>
+
+                    <MaterialCommunityIcons name="cart-plus" size={24} color={Colors.light.success} />
+
+                </TouchableOpacity>
+
+            </ScrollView>
+
         </View>
-      </View>
+
     );
-  };
 
-  return (
-    <View style={styles.screen}>
-      {/* Weekday bar */}
-      <View style={styles.weekHeader}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {days.map((day, index) => {
-            const isActive = index === todayIndex;
-            return (
-              <Pressable
-                key={day}
-                style={[styles.dayPill, isActive && styles.dayPillActive]}
-              >
-                <Text style={[styles.dayLabel, isActive && styles.dayLabelActive]}>
-                  {day}
-                </Text>
-                {isActive && <Text style={styles.dayNumber}>29</Text>}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+};
 
-      <Text style={styles.pageTitle}>Wednesday, January 29</Text>
 
-      <FlatList
-        data={tasks}
-        renderItem={renderTask}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.taskList}
-        showsVerticalScrollIndicator={false}
-      />
 
-      <Pressable style={styles.fab}>
-        <Ionicons name="add" size={28} color="white" />
-      </Pressable>
-    </View>
-  );
-}
+export default Orders;
+
+
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  weekHeader: {
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  dayPill: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    borderRadius: 9999,
-  },
-  dayPillActive: {
-    backgroundColor: '#16a34a',
-  },
-  dayLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#475569',
-  },
-  dayLabelActive: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  dayNumber: {
-    fontSize: 11,
-    color: 'white',
-    marginTop: 2,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#0f172a',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  taskList: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  taskCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#cbd5e1',
-    marginRight: 12,
-    marginTop: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxDone: {
-    backgroundColor: '#16a34a',
-    borderColor: '#16a34a',
-  },
-  taskInfo: {
-    flex: 1,
-  },
-  taskName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#0f172a',
-  },
-  taskNameDone: {
-    textDecorationLine: 'line-through',
-    color: '#94a3b8',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-  priorityTag: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  priorityLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
+
+    
+
+    breedType: {
+
+        fontSize: 15,
+
+        color: '#555',
+
+        marginBottom: 12,
+
+        textAlign: 'center',
+
+    },
+
+  
+
+    container: {
+
+        flex: 1,
+
+        backgroundColor: Colors.light.background || '#f8f9fa',
+
+    },
+
+    pageTitle: {
+
+        fontFamily: 'Roboto',
+
+        fontSize: 24,
+
+        fontWeight: 'bold',
+
+        textAlign: 'center',
+
+        marginTop: 16,
+
+        // marginBottom: 10,
+
+        color: Colors.light.text,
+
+    },
+
+    sectionTitle: {
+
+        marginLeft: 20,
+
+        marginTop: 24,
+
+        marginBottom: 12,
+
+        color: Colors.light.text,
+
+        fontWeight: 'bold',
+
+        fontSize: 18,
+
+    },
+
+    featuredCard: {
+
+        margin: 20,
+
+        padding: 20,
+
+        backgroundColor: Colors.light.topBackground || '#ffffff',
+
+        borderRadius: 16,
+
+        alignItems: 'center',
+
+        shadowColor: '#000',
+
+        shadowOffset: { width: 0, height: 2 },
+
+        shadowOpacity: 0.1,
+
+        shadowRadius: 8,
+
+        elevation: 4,
+
+    },
+
+    featuredTitle: {
+
+        fontFamily: 'Roboto',
+
+        fontSize: 20,
+
+        fontWeight: 'bold',
+
+        color: Colors.light.success,
+
+    },
+
+    featuredSubtitle: {
+
+        marginTop: 6,
+
+        color: '#666',
+
+        fontSize: 14,
+
+    },
+
+    statsContainer: {
+
+        paddingHorizontal: 16,
+
+        paddingBottom: 24,
+
+        gap: 16,
+
+    },
+
+    statItem: {
+
+        backgroundColor: '#fff',
+
+        borderRadius: 16,
+
+        padding: 20,
+
+        alignItems: 'center',
+
+        shadowColor: '#000',
+
+        shadowOffset: { width: 0, height: 2 },
+
+        shadowOpacity: 0.08,
+
+        shadowRadius: 8,
+
+        elevation: 3,
+
+    },
+
+    breedName: {
+
+        fontSize: 18,
+
+        fontWeight: '700',
+
+        color: Colors.light.text,
+
+        marginTop: 12,
+
+        marginBottom: 4,
+
+    },
+
+    breedType: {
+
+        fontSize: 15,
+
+        color: '#555',
+
+        marginBottom: 12,
+
+        textAlign: 'center',
+
+    },
+
+    detailRow: {
+
+        flexDirection: 'row',
+
+        alignItems: 'center',
+
+        marginTop: 4,
+
+    },
+
+    detailLabel: {
+
+        fontSize: 18,
+
+        color: '#333',
+
+        fontWeight: '700',
+
+    },
+
+    detailValue: {
+
+        fontSize: 18,
+
+        fontWeight: '500',
+
+        color: '#474747',
+
+    },
+
 });
