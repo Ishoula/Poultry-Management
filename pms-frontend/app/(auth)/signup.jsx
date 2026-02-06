@@ -150,7 +150,7 @@ export default function SignUpScreen() {
         {/* Toggle */}
         <View style={styles.toggleContainer}>
           <TouchableOpacity style={styles.inactiveToggle}>
-            <Link href="/sign-in" asChild>
+            <Link href="/login" asChild>
               <Text style={styles.inactiveToggleText}>Login</Text>
             </Link>
           </TouchableOpacity>

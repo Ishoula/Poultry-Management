@@ -6,8 +6,6 @@ import { Colors } from '../../constants/colors';
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-
-
 const ordersData = [
 
     {
@@ -18,7 +16,7 @@ const ordersData = [
 
         breedType: 'Boilers',
 
-        basis:'Per kg',
+        basis: 'Per kg',
 
         quantity: '25kg',
 
@@ -38,7 +36,7 @@ const ordersData = [
 
         breedType: 'Layers',
 
-        basis:'Per kg',
+        basis: 'Per kg',
 
         quantity: '20kg',
 
@@ -58,7 +56,7 @@ const ordersData = [
 
         breedType: 'Kuroilers',
 
-        basis:'Per chicken',
+        basis: 'Per chicken',
 
         quantity: '15 chicken',
 
@@ -71,9 +69,6 @@ const ordersData = [
     },
 
 ];
-
-
-
 const Orders = () => {
 
     return (
@@ -146,7 +141,7 @@ const Orders = () => {
 
                     ))}
 
-                </View> 
+                </View>
 
 
 
@@ -182,7 +177,7 @@ const Orders = () => {
 
                 >
 
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize:18 }}>
+                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize: 18 }}>
 
                         Add order
 
@@ -208,7 +203,7 @@ export default Orders;
 
 const styles = StyleSheet.create({
 
-    
+
 
     breedType: {
 
@@ -222,7 +217,7 @@ const styles = StyleSheet.create({
 
     },
 
-  
+
 
     container: {
 
@@ -293,7 +288,6 @@ const styles = StyleSheet.create({
     featuredTitle: {
 
         fontFamily: 'Roboto',
-
         fontSize: 20,
 
         fontWeight: 'bold',

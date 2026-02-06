@@ -38,7 +38,7 @@ const Batch = () => {
         <View style={styles.batchCard}>
             <View style={styles.batchCardHeader}>
                 <View style={[styles.iconCircle, { backgroundColor: `${item.iconColor}26` }]}> 
-                    <Icon name="emoji-food-beverage" size={22} color={item.iconColor} />
+                    <Icon name="egg" size={22} color={item.iconColor} />
                 </View>
                 <View style={styles.batchInfo}>
                     <View style={styles.batchTitleRow}>

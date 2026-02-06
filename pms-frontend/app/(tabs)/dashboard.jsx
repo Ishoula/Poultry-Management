@@ -5,6 +5,8 @@ import { ScrollView, StyleSheet, Text, View,Image } from "react-native";
 import UserNavbar from "../../components/UserNavbar";
 import { Colors } from "../../constants/colors";
 import shoula from '../../assets/images/shoula.jpg';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 export default function HomeScreen() {
   const { user } = useUser();
 
@@ -121,9 +123,9 @@ export default function HomeScreen() {
 
           <View style={styles.statItem}>
             <Ionicons
-              name="cart"
+              name="store-front"
               size={32}
-              color={Colors.light.cart}
+              color={Colors.light.success}
             />
             <Text style={styles.statNumber}>12</Text>
             <Text style={styles.statLabel}>Orders</Text>
@@ -233,7 +235,7 @@ export default function HomeScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.iconContainer}>
             <Text>
-              <FontAwesome name='line-chart' size={20} color={Colors.light.success} />
+              <Icon name='egg' size={20} color={Colors.light.pending} />
             </Text>
             <View>
               <Text style={styles.batchText}>{growthLog.Batch1.name}</Text>
@@ -253,10 +255,10 @@ export default function HomeScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.iconContainer}>
             <Text>
-              <FontAwesome
-                name="line-chart"
+              <Icon
+                name="egg"
                 size={20}
-                color={Colors.light.success}
+                color={Colors.light.pending}
               />
             </Text>
             <View>
@@ -281,7 +283,7 @@ export default function HomeScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.iconContainer}>
             <Text>
-              <Ionicons name='cart' size={24} color={Colors.light.cart} />
+              <Ionicons name='cart' size={24} color={Colors.light.success} />
             </Text>
             <View>
               <Text style={styles.batchText}>{orders.first.name}</Text>
@@ -306,7 +308,7 @@ export default function HomeScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.iconContainer}>
             <Text>
-              <Ionicons name='cart' size={24} color={Colors.light.cart} />
+              <Ionicons name='cart' size={24} color={Colors.light.success} />
             </Text>
             <View>
               <Text style={styles.batchText}>{orders.second.name}</Text>
