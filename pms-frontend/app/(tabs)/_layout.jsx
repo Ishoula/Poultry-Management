@@ -1,8 +1,15 @@
 import { Ionicons } from '@expo/vector-icons'
-import { Tabs } from 'expo-router'
+import { Redirect, Tabs } from 'expo-router'
 import { Colors } from '../../constants/colors'
+import { useAuth } from '../../context/AuthContext'
 
 export default function Layout() {
+  const { initializing, isSignedIn } = useAuth()
+
+  if (!initializing && !isSignedIn) {
+    return <Redirect href={'/(auth)/login'} />
+  }
+
   return (
     <Tabs
       screenOptions={{

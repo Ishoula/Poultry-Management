@@ -1,16 +1,13 @@
-import { useUser } from "@clerk/clerk-expo";
-import { Entypo, FontAwesome5, Ionicons, FontAwesome } from "@expo/vector-icons";
+import { Entypo, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { ScrollView, StyleSheet, Text, View,Image } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Image } from "react-native";
 import UserNavbar from "../../components/UserNavbar";
 import { Colors } from "../../constants/colors";
 import shoula from '../../assets/images/shoula.jpg';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default function HomeScreen() {
-  const { user } = useUser();
-
-  const firstName = user?.firstName || user?.username?.split(" ")[0] || "User";
+  const firstName = "User";
 
   const tasks = {
     feeding: {

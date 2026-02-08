@@ -1,18 +1,19 @@
-import { useUser } from '@clerk/clerk-expo'
 import { Ionicons } from '@expo/vector-icons'
 import { Link, router } from 'expo-router'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import UserNavbar from '../../components/UserNavbar'
 import { Colors } from '../../constants/colors'
+import { useEffect } from 'react'
 
 export default function Page() {
-  const { user } = useUser()
-  
-  // Auto-redirect to dashboard after loading
-  setTimeout(() => {
-    router.replace('/(tabs)/dashboard')
-  }, 100)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace('/(tabs)/dashboard')
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const quickActions = [
     {

@@ -11,13 +11,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import logo from '../../assets/images/logo.png';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SignInScreen() {
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const { signIn } = useAuth();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = useState('');
@@ -27,50 +27,16 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const onSignInPress = async () => {
-    if (!isLoaded || loading) return;
+    if (loading) return;
 
     setError('');
     setLoading(true);
 
     try {
-      const signInAttempt = await signIn.create({
-        identifier: emailAddress.trim(),
-        password,
-      });
-
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId });
-        router.replace('/(tabs)/dashboard');
-      } else {
-        setError('Please complete additional verification steps');
-      }
+      await signIn({ email: emailAddress.trim(), password });
+      router.replace('/(tabs)/dashboard');
     } catch (err) {
-      const errorMessage =
-        err?.errors?.[0]?.longMessage ||
-        err?.errors?.[0]?.message ||
-        'Invalid email or password';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onGoogleSignIn = async () => {
-    if (!isLoaded || loading) return;
-
-    setError('');
-    setLoading(true);
-
-    try {
-      // Start OAuth flow with Google
-      await signIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',         // ← required callback route
-        redirectUrlComplete: '/(tabs)',       // where to go after successful login
-      });
-    } catch (err) {
-      setError('Google sign-in failed. Please try again.');
-      console.error('Google sign-in error:', err);
+      setError(err?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -164,23 +130,6 @@ export default function SignInScreen() {
             <Text style={styles.buttonText}>
               {loading ? 'Logging in...' : 'Login'}
             </Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.orContainer}>
-            <View style={styles.orLine} />
-            <Text style={styles.orText}>OR</Text>
-            <View style={styles.orLine} />
-          </View>
-
-          {/* Google Login Button */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={onGoogleSignIn}
-            disabled={loading}
-          >
-            <Ionicons name="logo-google" size={22} color="#4285F4" />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>

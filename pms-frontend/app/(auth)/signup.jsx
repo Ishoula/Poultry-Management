@@ -9,135 +9,43 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
 import { ScrollView } from 'react-native-web';
 import { Link, useRouter } from 'expo-router';
 import logo from '../../assets/images/logo.png';
 import { Colors } from '../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
+
 export default function SignUpScreen() {
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const { signUp } = useAuth();
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
-  const [pendingVerification, setPendingVerification] = useState(false);
-  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const onSignUpPress = async () => {
-    if (!isLoaded || loading) return;
+    if (loading) return;
 
     setError('');
     setLoading(true);
 
     try {
-      const signUpResponse = await signUp.create({
-        fullName: fullName.trim(),
-        emailAddress: emailAddress.trim(),
+      await signUp({
+        username: fullName.trim(),
+        email: emailAddress.trim(),
         password,
       });
-
-      // If we get here → creation succeeded
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      setPendingVerification(true);
+      router.replace('/(auth)/login');
     } catch (err) {
-      let errorMessage = 'Failed to create account. Please try again.';
-
-      if (err?.errors?.[0]) {
-        const clerkError = err.errors[0];
-        errorMessage = clerkError.longMessage || clerkError.message || errorMessage;
-
-        // Very common Clerk errors - make them user-friendly
-        if (clerkError.code === 'form_password_length_too_short') {
-          errorMessage = 'Password must be at least 8 characters';
-        } else if (clerkError.code === 'form_identifier_exists') {
-          errorMessage = 'This email is already registered';
-        } else if (clerkError.code === 'form_fullName_invalid') {
-          errorMessage = 'fullName can only contain letters, numbers, and underscores';
-        }
-      }
-
-      setError(errorMessage);
-      console.log('Sign-up error:', err);
+      setError(err?.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const onVerifyPress = async () => {
-    if (!isLoaded || loading) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
-      });
-
-      if (signUpAttempt.status === 'complete') {
-        await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace('/(tabs)'); // ← adjust according to your navigation
-      } else {
-        setError('Verification failed. Please try again.');
-      }
-    } catch (err) {
-      setError(err?.errors?.[0]?.longMessage || 'Invalid code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (pendingVerification) {
-    return (
-      <ScrollView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.container}
-        >
-          <Text style={styles.appName}>Smart Poultry</Text>
-
-          <View style={styles.card}>
-            <Text style={styles.welcomeTitle}>Verify Email</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Enter the code sent to {emailAddress}
-            </Text>
-
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>
-                <Ionicons name='mail-outline' size={20} color={Colors.light.icon} />
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Verification code"
-                keyboardType="number-pad"
-                value={code}
-                onChangeText={setCode}
-                maxLength={6}
-                autoFocus
-              />
-            </View>
-
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.loginButton, loading && styles.buttonDisabled]}
-              onPress={onVerifyPress}
-              disabled={loading || code.length < 4}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? 'Verifying...' : 'Verify & Continue'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </ScrollView>
-    );
-  }
 
   return (
     <ScrollView style={styles.safeArea}>
