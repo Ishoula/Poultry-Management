@@ -39,10 +39,24 @@ const TasksScreen = () => {
         };
     }, []);
 
-    const toggleTask = (id) => {
+    const toggleTask = async (id) => {
+        // Optimistically flip the local state first for snappy UX
         setTasks((prev) =>
             prev.map((task) => (task._id === id ? { ...task, completed: !task.completed } : task))
         );
+        try {
+            const task = tasks.find((t) => t._id === id);
+            await authFetch(`/tasks/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ completed: !task.completed }),
+            });
+        } catch (e) {
+            // Roll back on failure
+            setTasks((prev) =>
+                prev.map((task) => (task._id === id ? { ...task, completed: !task.completed } : task))
+            );
+            console.error('Failed to update task:', e?.message);
+        }
     };
 
     return (

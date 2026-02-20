@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet ,Pressable} from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Image } from 'expo-image'
 import { Link } from 'expo-router'
 import { Colors } from '../constants/colors'
@@ -10,7 +10,7 @@ const index = () => {
   return (
     <View style={styles.container}>
       {/* Top Bar */}
-      <Navbar/>
+      <Navbar />
       {/* Image div */}
       <View style={styles.imageDiv}>
         <Image source={logo} style={styles.image} />
@@ -30,7 +30,7 @@ const index = () => {
               <Text style={styles.buttonText}>Sign In</Text>
             </Pressable>
           </Link>
-          <Text style={{padding:10}}>OR</Text>
+          <Text style={{ padding: 10 }}>OR</Text>
           <Link href="/signup">
             <Pressable style={styles.button}>
               <Text style={styles.buttonText}>Sign Up</Text>
@@ -74,15 +74,15 @@ const styles = StyleSheet.create({
   image: {
     width: 200,
     height: 200,
-    borderRadius: '50%'
+    borderRadius: 100
   },
   mainContent: {
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     width: '100%',
-    padding:20,
-    backgroundColor:Colors.light.topBackground
+    padding: 20,
+    backgroundColor: Colors.light.topBackground
   },
   contentText: {
     fontSize: 24,
@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
     color: Colors.light.text
   },
   buttonDiv: {
-    flexDirection:'row',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop:40,
-    marginBottom:30,
+    marginTop: 40,
+    marginBottom: 30,
   },
   button: {
     backgroundColor: Colors.light.success,
@@ -104,9 +104,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText:{
+  buttonText: {
     color: '#fff',
-    fontSize:18,
-    fontWeight:'bold'
+    fontSize: 18,
+    fontWeight: 'bold'
   }
 })

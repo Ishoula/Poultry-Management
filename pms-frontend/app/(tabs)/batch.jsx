@@ -1,5 +1,5 @@
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -50,14 +50,14 @@ const Batch = () => {
     const renderBatch = ({ item }) => (
         <View style={styles.batchCard}>
             <View style={styles.batchCardHeader}>
-                <View style={[styles.iconCircle, { backgroundColor: `${item.iconColor}26` }]}> 
+                <View style={[styles.iconCircle, { backgroundColor: `${item.iconColor}26` }]}>
                     <Icon name="egg" size={22} color={item.iconColor} />
                 </View>
                 <View style={styles.batchInfo}>
                     <View style={styles.batchTitleRow}>
                         <View>
                             <Text style={styles.batchName}>{item.name}</Text>
-                            <View style={[styles.statusPill, { backgroundColor: `${Colors.light.success}14` }]}> 
+                            <View style={[styles.statusPill, { backgroundColor: `${Colors.light.success}14` }]}>
                                 <Text style={styles.statusText}>{item.status}</Text>
                             </View>
                         </View>
@@ -100,7 +100,7 @@ const Batch = () => {
                                 <Icon name="arrow-back" size={20} color={Colors.light.text} />
                             </TouchableOpacity>
                             <Text style={[styles.title, { position: 'absolute', left: 0, right: 0, textAlign: 'center' }]}>Batches</Text>
-                           
+
                         </View>
                         {loading ? <Text style={styles.subtitle}>Loading...</Text> : null}
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}

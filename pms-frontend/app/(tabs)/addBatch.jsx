@@ -1,33 +1,92 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const breedOptions = [
-    { id: 'broilers', label: 'Broilers', icon: 'cottage' },
-    { id: 'layers', label: 'Layers', icon: 'egg' },
-    { id: 'kuroilers', label: 'Kuroilers', icon: 'pets' },
-];
+import { authFetch } from '../../context/AuthContext';
+import { useRouter } from 'expo-router';
 
 const AddBatch = () => {
-    const [batchName, setBatchName] = useState('');
-    const [selectedBreed, setSelectedBreed] = useState('broilers');
+    const router = useRouter();
+
+    // Form state
+    const [selectedBreedId, setSelectedBreedId] = useState(null);
     const [totalBirds, setTotalBirds] = useState('');
     const [arrivalDate, setArrivalDate] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [focusedField, setFocusedField] = useState(null);
 
-    const handleRegister = () => {
-        // TODO: Implement registration logic (e.g., API call)
-        console.log({
-            batchName,
-            selectedBreed,
-            totalBirds,
-            arrivalDate,
-            isActive,
-        });
-        // Optionally navigate back or show success message
+    // Breeds fetched from API
+    const [breeds, setBreeds] = useState([]);
+    const [breedsLoading, setBreedsLoading] = useState(true);
+    const [breedsError, setBreedsError] = useState('');
+
+    // Submission state
+    const [submitting, setSubmitting] = useState(false);
+
+    // Fetch breeds on mount
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                setBreedsLoading(true);
+                setBreedsError('');
+                const data = await authFetch('/breeds', { method: 'GET' });
+                const list = Array.isArray(data?.breeds) ? data.breeds : [];
+                if (mounted) {
+                    setBreeds(list);
+                    if (list.length > 0) setSelectedBreedId(list[0]._id);
+                }
+            } catch (e) {
+                if (mounted) setBreedsError(e?.message || 'Failed to load breeds');
+            } finally {
+                if (mounted) setBreedsLoading(false);
+            }
+        })();
+        return () => { mounted = false; };
+    }, []);
+
+    const handleRegister = async () => {
+        if (submitting) return;
+
+        // Validate
+        if (!selectedBreedId) {
+            Alert.alert('Validation Error', 'Please select a breed.');
+            return;
+        }
+        const birds = parseInt(totalBirds, 10);
+        if (!totalBirds || isNaN(birds) || birds < 1) {
+            Alert.alert('Validation Error', 'Please enter a valid number of birds (at least 1).');
+            return;
+        }
+        if (!arrivalDate.trim()) {
+            Alert.alert('Validation Error', 'Please enter an arrival date.');
+            return;
+        }
+        const parsedDate = new Date(arrivalDate.trim());
+        if (isNaN(parsedDate.getTime())) {
+            Alert.alert('Validation Error', 'Invalid date format. Please use YYYY-MM-DD.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            await authFetch('/batchs', {
+                method: 'POST',
+                body: JSON.stringify({
+                    breed: selectedBreedId,
+                    total_chickens: birds,
+                    start_date: parsedDate.toISOString(),
+                }),
+            });
+            Alert.alert('Success', 'Batch created successfully!', [
+                { text: 'OK', onPress: () => router.replace('/(tabs)/batch') },
+            ]);
+        } catch (e) {
+            Alert.alert('Error', e?.message || 'Failed to create batch. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -36,57 +95,54 @@ const AddBatch = () => {
                 <UserNavbar />
                 <View style={styles.screenPadding}>
                     <View style={styles.topBar}>
-                        <TouchableOpacity style={styles.navIconButton}>
+                        <TouchableOpacity style={styles.navIconButton} onPress={() => router.back()}>
                             <Icon name="arrow-back" size={20} color={Colors.light.text} />
                         </TouchableOpacity>
                         <Text style={styles.topBarTitle}>Register Batch</Text>
                     </View>
 
                     <View style={styles.formCard}>
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Batch Name</Text>
-                            <View style={[styles.inputShell, focusedField === 'batchName' && styles.inputShellFocused]}>
-                                <Icon name="inventory" size={18} color={Colors.light.icon} style={styles.inputIcon} />
-                                <TextInput
-                                    style={styles.textInput}
-                                    value={batchName}
-                                    onChangeText={setBatchName}
-                                    placeholder="e.g., Summer Broilers A"
-                                    placeholderTextColor="#9CA3AF"
-                                    underlineColorAndroid="transparent"
-                                    onFocus={() => setFocusedField('batchName')}
-                                    onBlur={() => setFocusedField(null)}
-                                />
-                            </View>
-                        </View>
 
+                        {/* Breed Selector */}
                         <View style={styles.fieldGroup}>
                             <Text style={styles.fieldLabel}>Select Breed</Text>
-                            <View style={styles.breedRow}>
-                                {breedOptions.map((option) => {
-                                    const isActiveOption = option.id === selectedBreed;
-                                    return (
-                                        <TouchableOpacity
-                                            key={option.id}
-                                            style={[styles.breedPill, isActiveOption && styles.breedPillActive]}
-                                            onPress={() => setSelectedBreed(option.id)}
-                                        >
-                                            <View style={[styles.breedIconBadge, isActiveOption && styles.breedIconBadgeActive]}>
-                                                <Icon
-                                                    name={option.icon}
-                                                    size={18}
-                                                    color={isActiveOption ? '#ffffff' : '#9CA3AF'}
-                                                />
-                                            </View>
-                                            <Text style={[styles.breedLabel, isActiveOption && styles.breedLabelActive]}>
-                                                {option.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
+                            {breedsLoading ? (
+                                <ActivityIndicator size="small" color={Colors.light.success} />
+                            ) : breedsError ? (
+                                <Text style={styles.errorText}>{breedsError}</Text>
+                            ) : breeds.length === 0 ? (
+                                <Text style={styles.emptyText}>No breeds found. Please add a breed first.</Text>
+                            ) : (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.breedRow}>
+                                    {breeds.map((breed) => {
+                                        const isSelected = breed._id === selectedBreedId;
+                                        return (
+                                            <TouchableOpacity
+                                                key={breed._id}
+                                                style={[styles.breedPill, isSelected && styles.breedPillActive]}
+                                                onPress={() => setSelectedBreedId(breed._id)}
+                                            >
+                                                <View style={[styles.breedIconBadge, isSelected && styles.breedIconBadgeActive]}>
+                                                    <Icon
+                                                        name="egg"
+                                                        size={18}
+                                                        color={isSelected ? '#ffffff' : '#9CA3AF'}
+                                                    />
+                                                </View>
+                                                <Text style={[styles.breedLabel, isSelected && styles.breedLabelActive]}>
+                                                    {breed.breedName}
+                                                </Text>
+                                                <Text style={styles.breedMeta}>
+                                                    {breed.growthPeriod}d · {breed.averageWeight}kg
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            )}
                         </View>
 
+                        {/* Total Birds */}
                         <View style={styles.fieldGroup}>
                             <Text style={styles.fieldLabel}>Total Number of Birds</Text>
                             <View style={[styles.inputShell, focusedField === 'totalBirds' && styles.inputShellFocused]}>
@@ -95,7 +151,7 @@ const AddBatch = () => {
                                     style={styles.textInput}
                                     value={totalBirds}
                                     onChangeText={setTotalBirds}
-                                    placeholder="# 0"
+                                    placeholder="e.g. 500"
                                     placeholderTextColor="#9CA3AF"
                                     keyboardType="numeric"
                                     underlineColorAndroid="transparent"
@@ -105,6 +161,7 @@ const AddBatch = () => {
                             </View>
                         </View>
 
+                        {/* Arrival / Start Date */}
                         <View style={styles.fieldGroup}>
                             <Text style={styles.fieldLabel}>Arrival Date</Text>
                             <View style={[styles.inputShell, styles.inputShellBetween, focusedField === 'arrivalDate' && styles.inputShellFocused]}>
@@ -114,18 +171,18 @@ const AddBatch = () => {
                                         style={styles.textInput}
                                         value={arrivalDate}
                                         onChangeText={setArrivalDate}
-                                        placeholder="mm/dd/yyyy"
+                                        placeholder="YYYY-MM-DD"
                                         placeholderTextColor="#9CA3AF"
                                         underlineColorAndroid="transparent"
                                         onFocus={() => setFocusedField('arrivalDate')}
                                         onBlur={() => setFocusedField(null)}
                                     />
                                 </View>
-
                                 <Icon name="calendar-today" size={18} color={Colors.light.icon} />
                             </View>
                         </View>
 
+                        {/* Active Toggle */}
                         <View style={[styles.fieldGroup, styles.toggleRow]}>
                             <View style={styles.toggleCopy}>
                                 <Text style={styles.toggleLabel}>Set as Active</Text>
@@ -139,9 +196,20 @@ const AddBatch = () => {
                             />
                         </View>
 
-                        <TouchableOpacity style={styles.saveButton} onPress={handleRegister}>
-                            <Icon name="check" size={18} color="#ffffff" style={styles.saveIcon} />
-                            <Text style={styles.saveButtonText}>Create Batch</Text>
+                        {/* Submit */}
+                        <TouchableOpacity
+                            style={[styles.saveButton, submitting && styles.saveButtonDisabled]}
+                            onPress={handleRegister}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <>
+                                    <Icon name="check" size={18} color="#ffffff" style={styles.saveIcon} />
+                                    <Text style={styles.saveButtonText}>Create Batch</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -208,48 +276,30 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         marginBottom: 10,
     },
-    inputShell: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+    errorText: {
+        color: '#dc2626',
+        fontSize: 14,
     },
-    inputShellFocused: {
-        borderRadius: 0,
-    },
-    inputShellBetween: {
-        justifyContent: 'space-between',
-    },
-    inputIcon: {
-        marginRight: 12,
-    },
-    inlineIconText: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    textInput: {
-        flex: 1,
-        fontSize: 16,
-        color: Colors.light.text,
-        paddingVertical: 0,
+    emptyText: {
+        color: '#9CA3AF',
+        fontSize: 14,
+        fontStyle: 'italic',
     },
     breedRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         gap: 12,
+        paddingBottom: 4,
     },
     breedPill: {
-        flex: 1,
         alignItems: 'center',
         backgroundColor: '#F3F4F6',
         borderRadius: 18,
         paddingVertical: 14,
+        paddingHorizontal: 16,
         borderWidth: 1,
         borderColor: 'transparent',
-        gap: 10,
+        gap: 6,
+        minWidth: 100,
     },
     breedPillActive: {
         backgroundColor: `${Colors.light.success}10`,
@@ -270,9 +320,46 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: '#9CA3AF',
+        textAlign: 'center',
     },
     breedLabelActive: {
         color: Colors.light.success,
+    },
+    breedMeta: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        textAlign: 'center',
+    },
+    inputShell: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    inputShellFocused: {
+        borderColor: Colors.light.success,
+        backgroundColor: '#fff',
+    },
+    inputShellBetween: {
+        justifyContent: 'space-between',
+    },
+    inputIcon: {
+        marginRight: 12,
+    },
+    inlineIconText: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    textInput: {
+        flex: 1,
+        fontSize: 16,
+        color: Colors.light.text,
+        paddingVertical: 0,
     },
     toggleRow: {
         flexDirection: 'row',
@@ -306,6 +393,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowRadius: 12,
         elevation: 4,
+    },
+    saveButtonDisabled: {
+        opacity: 0.65,
     },
     saveIcon: {
         marginRight: 8,

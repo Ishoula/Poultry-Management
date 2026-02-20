@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
-import { ScrollView } from 'react-native-web';
+import { ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import logo from '../../assets/images/logo.png';
 import { Colors } from '../../constants/colors';

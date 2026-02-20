@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View, Image } from "react-native";
 import UserNavbar from "../../components/UserNavbar";
 import { Colors } from "../../constants/colors";
 import shoula from '../../assets/images/shoula.jpg';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { authFetch } from '../../context/AuthContext';
 
 export default function HomeScreen() {
@@ -297,7 +297,7 @@ export default function HomeScreen() {
         ) : (
           <View style={styles.sectionCard}>
             <View style={styles.iconContainer}>
-              <Image source={shoula} style={{width:60, height:60, borderRadius:50}} />
+              <Image source={shoula} style={{ width: 60, height: 60, borderRadius: 50 }} />
               <View>
                 <Text style={styles.batchText}>{chats[0].name}</Text>
                 <Text>

@@ -133,17 +133,7 @@ const styles = StyleSheet.create({
 
 
 
-    breedType: {
 
-        fontSize: 15,
-
-        color: '#555',
-
-        marginBottom: 12,
-
-        textAlign: 'center',
-
-    },
 
 
 
