@@ -1,44 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const tasksData = [
-    {
-        id: '1',
-        title: 'Clean the water tanks',
-        category: 'Cleaning',
-        time: '08:00 AM',
-        priority: 'High',
-        completed: false,
-    },
-    {
-        id: '2',
-        title: 'Morning Feeding',
-        category: 'Feeding',
-        time: '07:00 AM',
-        priority: 'Medium',
-        completed: false,
-    },
-    {
-        id: '3',
-        title: 'Temperature Check',
-        category: 'Environment',
-        time: '06:00 AM',
-        priority: 'Low',
-        completed: true,
-    },
-    {
-        id: '4',
-        title: 'Vaccination - Batch A',
-        category: 'Health',
-        time: '10:30 AM',
-        priority: 'High',
-        completed: false,
-    },
-];
+import { authFetch } from '../../context/AuthContext';
 
 const priorityStyles = {
     High: { bg: Colors.light.priorityHighBg, color: Colors.light.priorityHigh },
@@ -47,11 +13,35 @@ const priorityStyles = {
 };
 
 const TasksScreen = () => {
-    const [tasks, setTasks] = useState(tasksData);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let mounted = true;
+
+        (async () => {
+            try {
+                setError('');
+                setLoading(true);
+                const data = await authFetch('/tasks', { method: 'GET' });
+                const list = Array.isArray(data?.tasks) ? data.tasks : [];
+                if (mounted) setTasks(list);
+            } catch (e) {
+                if (mounted) setError(e?.message || 'Failed to load tasks');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const toggleTask = (id) => {
         setTasks((prev) =>
-            prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
+            prev.map((task) => (task._id === id ? { ...task, completed: !task.completed } : task))
         );
     };
 
@@ -64,19 +54,22 @@ const TasksScreen = () => {
                     <Text style={styles.pageTitle}>Tasks</Text>
                     <Text style={styles.pageSubtitle}>Manage your poultry routines and stay ahead of chores.</Text>
 
+                    {loading ? <Text style={styles.pageSubtitle}>Loading...</Text> : null}
+                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
                     <View style={styles.tasksStack}>
                         {tasks.map((task) => {
                             const isCompleted = task.completed;
                             const badgeStyle = priorityStyles[task.priority];
 
                             return (
-                                <View key={task.id} style={[styles.taskCard, isCompleted && styles.taskCardDone]}>
+                                <View key={task._id} style={[styles.taskCard, isCompleted && styles.taskCardDone]}>
                                     <TouchableOpacity
                                         style={[
                                             styles.checkbox,
                                             isCompleted ? styles.checkboxChecked : styles.checkboxDefault,
                                         ]}
-                                        onPress={() => toggleTask(task.id)}
+                                        onPress={() => toggleTask(task._id)}
                                     >
                                         {isCompleted && <Ionicons name="checkmark" size={18} color={Colors.light.topBackground} />}
                                     </TouchableOpacity>
@@ -136,6 +129,11 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: Colors.light.textMuted,
         lineHeight: 22,
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#dc2626',
+        lineHeight: 20,
     },
     tasksStack: {
         gap: 12,

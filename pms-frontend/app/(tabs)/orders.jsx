@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import UserNavbar from '../../components/UserNavbar';
@@ -5,144 +6,71 @@ import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { authFetch } from '../../context/AuthContext';
 
-const ordersData = [
-
-    {
-
-        id: '1',
-
-        name: 'Shoula',
-
-        breedType: 'Boilers',
-
-        basis: 'Per kg',
-
-        quantity: '25kg',
-
-        price: '50000 FRW',
-
-        icon: 'cart',
-
-        color: Colors.light.success,
-
-    },
-
-    {
-
-        id: '2',
-
-        name: 'Delight',
-
-        breedType: 'Layers',
-
-        basis: 'Per kg',
-
-        quantity: '20kg',
-
-        price: '40000 FRW',
-
-        icon: 'cart',
-
-        color: Colors.light.success,
-
-    },
-
-    {
-
-        id: '3',
-
-        name: 'Pasca',
-
-        breedType: 'Kuroilers',
-
-        basis: 'Per chicken',
-
-        quantity: '15 chicken',
-
-        price: '30000 FRW',
-
-        icon: 'cart',
-
-        color: Colors.light.success,
-
-    },
-
-];
 const Orders = () => {
 
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let mounted = true;
+
+        (async () => {
+            try {
+                setError('');
+                setLoading(true);
+                const data = await authFetch('/orders', { method: 'GET' });
+                const list = Array.isArray(data?.orders) ? data.orders : [];
+                if (mounted) setOrders(list);
+            } catch (e) {
+                if (mounted) setError(e?.message || 'Failed to load orders');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     return (
-
         <View style={styles.container}>
-
             <ScrollView showsVerticalScrollIndicator={false}>
-
                 <UserNavbar />
-
-
-
                 <Text style={styles.pageTitle}>Orders</Text>
-
-
-
+                {loading ? <Text style={styles.helperText}>Loading...</Text> : null}
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 {/* Featured / Highlighted breed */}
-
                 <View style={styles.featuredCard}>
-
                     <Text style={styles.featuredTitle}>Your orders</Text>
-
                 </View>
-
-
-
                 <View style={styles.statsContainer}>
-
-                    {ordersData.map((order) => (
-
-                        <View key={order.id} style={styles.statItem}>
-
-                            <MaterialCommunityIcons name={order.icon} size={24} color={order.color} />
-
+                    {orders.map((order) => (
+                        <View key={order._id} style={styles.statItem}>
+                            <MaterialCommunityIcons name={'cart'} size={24} color={Colors.light.success} />
                             <Text style={styles.breedName}>{order.name}</Text>
-
                             <View style={styles.detailRow}>
-
                                 <Text style={styles.detailLabel}>Breed Type: </Text>
-
                                 <Text style={styles.detailValue}>{order.breedType}</Text>
-
                             </View>
-
                             <View style={styles.detailRow}>
-
                                 <Text style={styles.detailLabel}>Basis: </Text>
-
                                 <Text style={styles.detailValue}>{order.basis}</Text>
-
                             </View>
-
                             <View style={styles.detailRow}>
-
                                 <Text style={styles.detailLabel}>Quantity: </Text>
-
                                 <Text style={styles.detailValue}>{order.quantity}</Text>
-
                             </View>
-
                             <View style={styles.detailRow}>
-
                                 <Text style={styles.detailLabel}>Price: </Text>
-
                                 <Text style={styles.detailValue}>{order.price}</Text>
-
                             </View>
-
                         </View>
-
                     ))}
-
                 </View>
-
 
 
                 <TouchableOpacity
@@ -242,6 +170,30 @@ const styles = StyleSheet.create({
         // marginBottom: 10,
 
         color: Colors.light.text,
+
+    },
+
+    helperText: {
+
+        textAlign: 'center',
+
+        color: '#6B7280',
+
+        marginTop: 8,
+
+        marginBottom: 8,
+
+    },
+
+    errorText: {
+
+        textAlign: 'center',
+
+        color: '#dc2626',
+
+        marginTop: 8,
+
+        marginBottom: 8,
 
     },
 

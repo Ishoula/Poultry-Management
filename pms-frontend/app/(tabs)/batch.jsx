@@ -2,38 +2,51 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const batchesData = [
-    {
-        id: '1',
-        name: 'Batch 1',
-        breed: 'Broilers',
-        total: '100 chicks',
-        arrival: '27 Jan 24',
-        status: 'Active',
-        iconColor: '#FBAC4F',
-    },
-    {
-        id: '2',
-        name: 'Batch 2',
-        breed: 'Layers',
-        total: '50 chicks',
-        arrival: '11 Apr 24',
-        status: 'Active',
-        iconColor: '#FBAC4F',
-    },
-    {
-        id: '3',
-        name: 'Batch 3',
-        breed: 'Kuroilers',
-        total: '70 chicks',
-        arrival: '25 Mar 24',
-        status: 'Active',
-        iconColor: '#FBAC4F',
-    },
-];
+import React, { useEffect, useMemo, useState } from 'react';
+import { authFetch } from '../../context/AuthContext';
 
 const Batch = () => {
+    const [batches, setBatches] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                setError('');
+                setLoading(true);
+                const data = await authFetch('/batchs', { method: 'GET' });
+                const list = Array.isArray(data?.batches) ? data.batches : [];
+                if (mounted) setBatches(list);
+            } catch (e) {
+                if (mounted) setError(e?.message || 'Failed to load batches');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const batchesData = useMemo(() => {
+        return batches.map((b, idx) => {
+            const arrivalDate = b.start_date ? new Date(b.start_date) : null;
+            const arrival = arrivalDate ? arrivalDate.toLocaleDateString() : '-';
+            return {
+                id: b._id,
+                name: `Batch ${idx + 1}`,
+                breed: b?.breed?.breedName || 'Unknown',
+                total: `${b.total_chickens} chicks`,
+                arrival,
+                status: (b.status || 'active').toString().toUpperCase(),
+                iconColor: '#FBAC4F',
+            };
+        });
+    }, [batches]);
+
     const renderBatch = ({ item }) => (
         <View style={styles.batchCard}>
             <View style={styles.batchCardHeader}>
@@ -89,6 +102,8 @@ const Batch = () => {
                             <Text style={[styles.title, { position: 'absolute', left: 0, right: 0, textAlign: 'center' }]}>Batches</Text>
                            
                         </View>
+                        {loading ? <Text style={styles.subtitle}>Loading...</Text> : null}
+                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
                         <TouchableOpacity style={styles.registerButton}>
                             <View style={styles.registerIconBadge}>
                                 <Icon name="add" size={18} color={Colors.light.success} />
@@ -124,18 +139,26 @@ const styles = StyleSheet.create({
         gap: 20,
     },
     headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',      // only care about left side
-    position: 'relative',
-    width: '100%',
-},
-title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.light.text,
-    // textAlign: 'center' is not needed anymore when using absolute
-},
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',      // only care about left side
+        position: 'relative',
+        width: '100%',
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: Colors.light.text,
+        // textAlign: 'center' is not needed anymore when using absolute
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#6B7280',
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#dc2626',
+    },
     headerIconButton: {
         width: 40,
         height: 40,

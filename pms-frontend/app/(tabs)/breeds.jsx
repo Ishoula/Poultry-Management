@@ -1,52 +1,61 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {  View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../../constants/colors';
 import UserNavbar from '../../components/UserNavbar'
-const breedsData = [
-  {
-    id: '1',
-    name: 'Broilers',
-    subtitle: 'Meat Production',
-    description: 'Rapid Growth',
-    growthPeriod: '1.5 Months',
-    avgWeight: '60kg',
-    iconColor: '#2E7D32',
-    iconName: 'eco',
-  },
-  {
-    id: '2',
-    name: 'Layers',
-    subtitle: 'Egg Focus',
-    description: 'Egg laying',
-    growthPeriod: '4 Months',
-    avgWeight: '60kg',
-    iconColor: '#FB8C00',
-    iconName: 'emoji-nature',
-  },
-  {
-    id: '3',
-    name: 'Kuroilers',
-    subtitle: 'Dual Purpose',
-    description: 'Dual Purpose',
-    growthPeriod: '6 Months',
-    avgWeight: '60kg',
-    iconColor: '#1E88E5',
-    iconName: 'grass',
-  },
-];
+import { authFetch } from '../../context/AuthContext';
 
 const BreedsScreen = () => {
+  const [breeds, setBreeds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setError('');
+        setLoading(true);
+        const data = await authFetch('/breeds', { method: 'GET' });
+        const list = Array.isArray(data?.breeds) ? data.breeds : [];
+        if (mounted) setBreeds(list);
+      } catch (e) {
+        if (mounted) setError(e?.message || 'Failed to load breeds');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const breedsData = useMemo(() => {
+    const palette = ['#2E7D32', '#FB8C00', '#1E88E5', '#8E24AA', '#F4511E'];
+    const icons = ['eco', 'emoji-nature', 'grass', 'pets', 'spa'];
+    return breeds.map((b, idx) => ({
+      id: b._id,
+      name: b.breedName,
+      subtitle: '',
+      description: b.description || '-',
+      growthPeriod: `${b.growthPeriod} Days`,
+      avgWeight: `${b.averageWeight}kg`,
+      iconColor: palette[idx % palette.length],
+      iconName: icons[idx % icons.length],
+    }));
+  }, [breeds]);
+
   const renderBreed = ({ item }) => (
     <View style={styles.breedCard}>
       <View style={[styles.iconCircle, { backgroundColor: item.iconColor }]}>
         <Icon name={item.iconName} size={26} color="#ffffff" />
       </View>
+
       <View style={styles.breedInfo}>
         <View style={styles.breedHeader}>
           <View style={styles.breedTitleGroup}>
             <Text style={styles.breedName}>{item.name}</Text>
-            <View style={[styles.breedSubtitlePill, { backgroundColor: `${item.iconColor}1A` }]}> 
+            <View style={[styles.breedSubtitlePill, { backgroundColor: `${item.iconColor}1A` }]} > 
               <Text style={[styles.breedSubtitle, { color: item.iconColor }]}>{item.subtitle}</Text>
             </View>
           </View>
@@ -92,6 +101,8 @@ const BreedsScreen = () => {
           <View style={styles.pageHeader}>
             <Text style={styles.title}>Breeds</Text>
             <Text style={styles.subtitle}>Manage your poultry variety and metrics.</Text>
+            {loading ? <Text style={styles.subtitle}>Loading...</Text> : null}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
             <TouchableOpacity style={styles.registerButton}>
               <View style={styles.registerIconBadge}>
                 <Icon name="add" size={18} color={Colors.light.success} />
@@ -132,6 +143,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
     marginBottom: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#dc2626',
+    marginBottom: 12,
   },
   registerButton: {
     flexDirection: 'row',

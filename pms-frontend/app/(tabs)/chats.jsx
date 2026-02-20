@@ -1,71 +1,41 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native';
 import { Colors } from '../../constants/colors'; // Assuming you have this for colors
 import UserNavbar from '../../components/UserNavbar'; // Reuse if it fits the top bar
 import shoula from '../../assets/images/shoula.jpg';
-import agdede from '../../assets/images/racoo.jpeg';
-import pasca from '../../assets/images/loveOfMyLife.jpg';
-import sema from '../../assets/images/IMG-20250506-WA0007.jpg';
-import community from '../../assets/images/racoo.jpeg';
-
-// Mock data for recent messages (replace with real data from API/state)
-const recentMessages = [
-  {
-    id: '1',
-    name: 'Shoula',
-    avatar: shoula, // Local import
-    lastMessage: 'How are the new chicks ad...',
-    time: '2m ago',
-    unreadStatus: true, // Unread
-  },
-  {
-    id: '2',
-    name: 'Agdede',
-    avatar: agdede,
-    lastMessage: "You: I'm coming to visit ur chicks",
-    time: '10m ago',
-    unreadStatus: false, // Read
-  },
-  {
-    id: '3',
-    name: 'Pasca',
-    avatar: pasca,
-    lastMessage: 'You: Do you have eggs?',
-    time: '30m ago',
-    unreadStatus: false, // No dot in image
-  },
-  {
-    id: '4',
-    name: 'Sema',
-    avatar: sema,
-    lastMessage: 'When are you vaccinating...',
-    time: '18:00',
-    unreadStatus: false, // Read
-  },
-  {
-    id: '5',
-    name: 'Musanze Community',
-    avatar: community, // Group avatar
-    lastMessage: 'Depression be like',
-    time: '20:00',
-    unreadStatus: false, // Read
-  },
-  {
-    id: '6',
-    name: 'Musanze Community',
-    avatar: community, // Group avatar
-    lastMessage: 'Depression be like',
-    time: '20:00',
-    unreadStatus: false, // Read
-  },
-];
+import { authFetch } from '../../context/AuthContext';
 
 const MessagesScreen = () => {
   const [selectedId, setSelectedId] = useState(null); // For handling chat selection if needed
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setError('');
+        setLoading(true);
+        const data = await authFetch('/chats', { method: 'GET' });
+        const list = Array.isArray(data?.chats) ? data.chats : [];
+        if (mounted) setChats(list);
+      } catch (e) {
+        if (mounted) setError(e?.message || 'Failed to load chats');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const renderAvatarItem = ({ item }) => (
     <View style={styles.avatarContainer}>
-      <Image source={item.avatar} style={styles.topAvatar} />
+      <Image source={shoula} style={styles.topAvatar} />
       <Text style={styles.avatarName}>{item.name}</Text>
     </View>
   );
@@ -74,12 +44,12 @@ const MessagesScreen = () => {
     <TouchableOpacity
       style={styles.messageItem}
       onPress={() => {
-        setSelectedId(item.id);
+        setSelectedId(item._id);
         // TODO: Navigate to chat details screen and mark as read
         console.log(`Opening chat with ${item.name}`);
       }}
     >
-      <Image source={item.avatar} style={styles.avatar} />
+      <Image source={shoula} style={styles.avatar} />
       <View style={styles.messageContent}>
         <Text style={[styles.name, item.unreadStatus && styles.unreadName]}>
           {item.name}
@@ -106,11 +76,13 @@ const MessagesScreen = () => {
       {/* Top Navbar – assuming UserNavbar includes bell and + */}
       <UserNavbar title="Smart Poultry" showBell={true} showSignOut={false} /> {/* Adjusted to match image; add + if needed */}
       <Text style={styles.pageTitle}>Messages</Text>
+      {loading ? <Text style={styles.helperText}>Loading...</Text> : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <FlatList
         horizontal
-        data={recentMessages.slice(0, 4)} // First 4 for top avatars
+        data={chats.slice(0, 4)}
         renderItem={renderAvatarItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         showsHorizontalScrollIndicator={false}
         style={styles.topAvatarsList}
         contentContainerStyle={{ paddingHorizontal: 20 }}
@@ -119,9 +91,9 @@ const MessagesScreen = () => {
         <Text style={styles.sectionTitle}>RECENT</Text>
       </View>
       <FlatList
-        data={recentMessages}
+        data={chats}
         renderItem={renderMessageItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         style={styles.list}
       />
       {/* Bottom Navigation – implement as a separate component or here if needed */}
@@ -157,6 +129,18 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     marginHorizontal: 20,
     color: Colors.light.text || '#000',
+  },
+  helperText: {
+    textAlign: 'left',
+    color: '#6B7280',
+    marginHorizontal: 20,
+    marginBottom: 8,
+  },
+  errorText: {
+    textAlign: 'left',
+    color: '#dc2626',
+    marginHorizontal: 20,
+    marginBottom: 8,
   },
   topAvatarsList: {
     marginBottom: 16,

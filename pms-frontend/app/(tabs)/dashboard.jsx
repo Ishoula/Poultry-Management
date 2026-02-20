@@ -1,3 +1,4 @@
+import React, { useEffect, useMemo, useState } from "react";
 import { Entypo, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScrollView, StyleSheet, Text, View, Image } from "react-native";
@@ -5,80 +6,89 @@ import UserNavbar from "../../components/UserNavbar";
 import { Colors } from "../../constants/colors";
 import shoula from '../../assets/images/shoula.jpg';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { authFetch } from '../../context/AuthContext';
 
 export default function HomeScreen() {
-  const firstName = "User";
+  const [me, setMe] = useState(null);
 
-  const tasks = {
-    feeding: {
-      name: "Morning Feeding",
-      time: "8:00 AM",
-      batch: "Batch-2",
-      status: "pending",
-    },
-    clean: {
-      name: "Clean Water Tanks",
-      time: "10:00 AM",
-      batch: "Batch-1",
-      status: "pending",
-    },
-  };
+  const [batches, setBatches] = useState([]);
+  const [breeds, setBreeds] = useState([]);
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const growthLog = {
-    Batch4: {
-      name: 'Batch-4',
-      avgWeight: '1.2 kg',
-      time: 'Day 20',
-    },
-    Batch1: {
-      name: 'Batch-1',
-      avgWeight: '1.5kg',
-      time: 'Day 50',
-    }
-  }
+  useEffect(() => {
+    let mounted = true;
 
-  const orders = {
-    first: {
-      name: 'Order - 1212',
-      quantity: '12 kg Boilers',
-      date: '18-05',
-      status: 'Delivered',
-    },
-    second: {
-      name: 'Order - 1213',
-      quantity: '8 kg Layers',
-      date: '20-05',
-      status: 'Pending',
-    }
-  }
+    (async () => {
+      try {
+        setError("");
+        setLoading(true);
 
-  const batches = {
-    name: 'Batch-3',
-    age: '30 days',
-    quantity: '150 chicks',
-    status: 'Active'
-  }
+        const [meRes, batchesRes, breedsRes, tasksRes, ordersRes, chatsRes] = await Promise.all([
+          authFetch('/auth/me', { method: 'GET' }),
+          authFetch('/batchs', { method: 'GET' }),
+          authFetch('/breeds', { method: 'GET' }),
+          authFetch('/tasks', { method: 'GET' }),
+          authFetch('/orders', { method: 'GET' }),
+          authFetch('/chats', { method: 'GET' }),
+        ]);
 
-  const breeds={
-    first:{
-      name:'Broilers',
-      characteristics:'Rapid growth',
-    },
-    second:{
-      name:'Layers',
-      characteristics:'Egg laying',
-    },
-    third:{
-      name:'Kuroilers',
-      characteristics:'Dual purpose',
-    }
-  }
+        const user = meRes?.user || null;
 
-  const chat={
-    name:'Shoula',
-    message:'How are the new chicks adapting',
-    time:'2m ago',
-  }
+        const fetchedBatches = Array.isArray(batchesRes?.batches) ? batchesRes.batches : [];
+        const fetchedBreeds = Array.isArray(breedsRes?.breeds) ? breedsRes.breeds : [];
+        const fetchedTasks = Array.isArray(tasksRes?.tasks) ? tasksRes.tasks : [];
+        const fetchedOrders = Array.isArray(ordersRes?.orders) ? ordersRes.orders : [];
+        const fetchedChats = Array.isArray(chatsRes?.chats) ? chatsRes.chats : [];
+
+        if (mounted) {
+          setMe(user);
+          setBatches(fetchedBatches);
+          setBreeds(fetchedBreeds);
+          setTasks(fetchedTasks);
+          setOrders(fetchedOrders);
+          setChats(fetchedChats);
+        }
+
+        // Load recent logs for first batch (if any)
+        if (fetchedBatches[0]?._id) {
+          const logsRes = await authFetch(`/batchs/${fetchedBatches[0]._id}/logs?limit=2&page=1`, { method: 'GET' });
+          const logs = Array.isArray(logsRes?.logs) ? logsRes.logs : [];
+          if (mounted) setRecentLogs(logs);
+        } else {
+          if (mounted) setRecentLogs([]);
+        }
+      } catch (e) {
+        if (mounted) setError(e?.message || 'Failed to load dashboard data');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const firstName = me?.username || me?.email || 'User';
+
+  const batchCount = batches.length;
+  const ordersCount = orders.length;
+  const deadCount = useMemo(() => {
+    return batches.reduce((sum, b) => {
+      const total = Number(b?.total_chickens || 0);
+      const current = Number(b?.current_chickens || 0);
+      return sum + Math.max(0, total - current);
+    }, 0);
+  }, [batches]);
+
+  const previewBatch = batches[0];
+  const previewBreeds = breeds.slice(0, 3);
+
   return (
     <View style={styles.screen}>
       {/* Fixed top navigation bar */}
@@ -104,7 +114,7 @@ export default function HomeScreen() {
               size={32}
               color={Colors.light.pending}
             />
-            <Text style={styles.statNumber}>5</Text>
+            <Text style={styles.statNumber}>{batchCount}</Text>
             <Text style={styles.statLabel}>Batches</Text>
           </View>
 
@@ -114,7 +124,7 @@ export default function HomeScreen() {
               size={32}
               color={Colors.light.danger || "#fa897d"}
             />
-            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statNumber}>{deadCount}</Text>
             <Text style={styles.statLabel}>Dead</Text>
           </View>
 
@@ -124,209 +134,111 @@ export default function HomeScreen() {
               size={32}
               color={Colors.light.success}
             />
-            <Text style={styles.statNumber}>12</Text>
+            <Text style={styles.statNumber}>{ordersCount}</Text>
             <Text style={styles.statLabel}>Orders</Text>
           </View>
         </View>
+
+        {loading ? <Text style={styles.infoText}>Loading...</Text> : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         {/* My Tasks */}
 
         <View>
           <Text style={styles.batchText}>My Tasks</Text>
         </View>
-
-        <View style={styles.sectionCard}>
-
-
-          <View style={styles.iconContainer}>
-            <Text>
-              <FontAwesome5
-                name="syringe"
-                size={20}
-                color={Colors.light.pending}
-              />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>Vaccine Batch 4</Text>
-              <Text>Today 3:00 PM</Text>
-            </View>
-            <View style={styles.buttonContainer}>
-              <Text style={styles.buttonText}>Mark Done</Text>
-            </View>
+        {tasks.length === 0 ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.infoText}>No tasks yet.</Text>
           </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Ionicons
-                name="restaurant"
-                size={20}
-                color={Colors.light.success}
-              />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{tasks.feeding.name}</Text>
-              <Text>
-                {tasks.feeding.batch} {tasks.feeding.time}
-              </Text>
+        ) : (
+          tasks.slice(0, 2).map((t) => (
+            <View key={t._id} style={styles.sectionCard}>
+              <View style={styles.iconContainer}>
+                <Text>
+                  <Ionicons name="pricetag-outline" size={20} color={Colors.light.icon} />
+                </Text>
+                <View>
+                  <Text style={styles.batchText}>{t.title}</Text>
+                  <Text>
+                    {t.category} {t.time}
+                  </Text>
+                </View>
+                <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
+                  <Text style={[styles.buttonText, { color: Colors.light.success }, { fontWeight: 'medium' }]}>
+                    {t.priority}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              <Text style={styles.buttonText}>
-                {tasks.feeding.status === "pending" ? (
-                  <MaterialIcons
-                    name="radio-button-unchecked"
-                    size={20}
-                    color={Colors.light.icon}
-                  />
-                ) : (
-                  <MaterialIcons
-                    name="radio-button-checked"
-                    size={20}
-                    color={Colors.light.suc}
-                  />
-                )}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Entypo
-                name="water"
-                size={20}
-                color={Colors.light.cart}
-              />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{tasks.clean.name}</Text>
-              <Text>
-                {tasks.clean.batch} {tasks.clean.time}
-              </Text>
-            </View>
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              <Text style={styles.buttonText}>
-                {tasks.clean.status === "pending" ? (
-                  <MaterialIcons
-                    name="radio-button-unchecked"
-                    size={20}
-                    color={Colors.light.icon}
-                  />
-                ) : (
-                  <MaterialIcons
-                    name="radio-button-checked"
-                    size={20}
-                    color={Colors.light.success}
-                  />
-                )}
-              </Text>
-            </View>
-          </View>
-        </View>
+          ))
+        )}
 
         {/* Growth Log */}
         <View>
           <Text style={styles.batchText}>Growth Log</Text>
         </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Icon name='egg' size={20} color={Colors.light.pending} />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{growthLog.Batch1.name}</Text>
-              <Text>
-                {growthLog.Batch1.avgWeight}
-              </Text>
-            </View>
-
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              <Text style={[styles.buttonText, { color: Colors.light.text }, { fontWeight: 'medium' }]}>
-                {growthLog.Batch1.time}
-              </Text>
-            </View>
-
+        {recentLogs.length === 0 ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.infoText}>No logs yet.</Text>
           </View>
-        </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Icon
-                name="egg"
-                size={20}
-                color={Colors.light.pending}
-              />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{growthLog.Batch4.name}</Text>
-              <Text>
-                {growthLog.Batch4.avgWeight}
-              </Text>
-            </View>
+        ) : (
+          recentLogs.map((log) => {
+            const dateLabel = log?.date ? new Date(log.date).toLocaleDateString() : '';
+            const valueLabel = `${log?.type || 'log'}: ${log?.value ?? ''}${log?.unit || ''}`;
+            return (
+              <View key={log._id} style={styles.sectionCard}>
+                <View style={styles.iconContainer}>
+                  <Text>
+                    <Icon name='egg' size={20} color={Colors.light.pending} />
+                  </Text>
+                  <View>
+                    <Text style={styles.batchText}>{previewBatch ? 'Batch' : 'Growth log'}</Text>
+                    <Text>{valueLabel}</Text>
+                  </View>
 
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              <Text style={[styles.buttonText, { color: Colors.light.text }, { fontWeight: 'medium' }]}>
-                {growthLog.Batch4.time}
-              </Text>
-            </View>
-          </View>
-        </View>
+                  <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
+                    <Text style={[styles.buttonText, { color: Colors.light.text }, { fontWeight: 'medium' }]}>
+                      {dateLabel}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
 
         {/* Latest Orders */}
         <View>
           <Text style={styles.batchText}>Latest Orders</Text>
         </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Ionicons name='cart' size={24} color={Colors.light.success} />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{orders.first.name}</Text>
-              <Text>
-                {orders.first.quantity} -{orders.first.date}
-              </Text>
-            </View>
-
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              {orders.first.status === 'Delivered' ? (
-                <Text style={[styles.buttonText, { color: Colors.light.success }, { fontWeight: 'medium' }]}>
-                  {orders.first.status}
-                </Text>) : (
-                <Text style={[styles.buttonText, { color: Colors.light.pending }, { fontWeight: 'medium' }]}>
-                  {orders.first.status}
-                </Text>
-              )}
-            </View>
-
+        {orders.length === 0 ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.infoText}>No orders yet.</Text>
           </View>
-        </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Text>
-              <Ionicons name='cart' size={24} color={Colors.light.success} />
-            </Text>
-            <View>
-              <Text style={styles.batchText}>{orders.second.name}</Text>
-              <Text>
-                {orders.second.quantity} -{orders.second.date}
-              </Text>
-            </View>
-
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              {orders.second.status === 'Delivered' ? (
-                <Text style={[styles.buttonText, { color: Colors.light.success }, { fontWeight: 'medium' }]}>
-                  {orders.second.status}
-                </Text>) : (
-                <Text style={[styles.buttonText, { color: Colors.light.pending }, { fontWeight: 'medium' }]}>
-                  {orders.second.status}
+        ) : (
+          orders.slice(0, 2).map((o) => (
+            <View key={o._id} style={styles.sectionCard}>
+              <View style={styles.iconContainer}>
+                <Text>
+                  <Ionicons name='cart' size={24} color={Colors.light.success} />
                 </Text>
-              )}
-            </View>
+                <View>
+                  <Text style={styles.batchText}>{o.name}</Text>
+                  <Text>
+                    {o.quantity} - {o.breedType}
+                  </Text>
+                </View>
 
-          </View>
-        </View>
+                <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
+                  <Text style={[styles.buttonText, { color: o.status === 'Delivered' ? Colors.light.success : Colors.light.pending }, { fontWeight: 'medium' }]}>
+                    {o.status}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
 
         {/* Batches */}
         <View>
@@ -338,19 +250,21 @@ export default function HomeScreen() {
               <Ionicons name='egg' size={24} color={Colors.light.pending} />
             </Text>
             <View>
-              <Text style={styles.batchText}>{batches.name}</Text>
-              <Text>
-                {batches.quantity} -{batches.age}
-              </Text>
+              <Text style={styles.batchText}>{previewBatch ? 'Latest Batch' : 'No batches'}</Text>
+              {previewBatch ? (
+                <Text>
+                  {previewBatch.current_chickens}/{previewBatch.total_chickens} chickens
+                </Text>
+              ) : null}
             </View>
 
             <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              {batches.status === 'Active' ? (
+              {(previewBatch?.status || 'active').toString().toLowerCase() === 'active' ? (
                 <Text style={[styles.buttonText, { color: Colors.light.success, fontWeight: 'medium', backgroundColor: Colors.light.lightSuccess, padding: 10, borderRadius: 6 }]}>
-                  {batches.status}
+                  {(previewBatch?.status || 'active').toString().toUpperCase()}
                 </Text>) : (
                 <Text style={[styles.buttonText, { color: Colors.light.pending }, { fontWeight: 'medium' }]}>
-                  {batches.status}
+                  {(previewBatch?.status || 'inactive').toString().toUpperCase()}
                 </Text>
               )}
             </View>
@@ -359,58 +273,46 @@ export default function HomeScreen() {
 
         {/* Breeds*/}
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Ionicons
-              name="logo-twitter"
-              size={32}
-              color={Colors.light.success}
-            />
-            <Text style={styles.batchText}>{breeds.first.name}</Text>
-            <Text style={{fontSize:16,}}>{breeds.first.characteristics}</Text>
-          </View>
-
-          <View style={styles.statItem}>
-            <Ionicons
-              name="logo-twitter"
-              size={32}
-              color={Colors.light.pending}
-            />
-            <Text style={styles.statNumber}>{breeds.second.name}</Text>
-            <Text style={styles.statLabel}>{breeds.second.characteristics}</Text>
-          </View>
-
-          <View style={styles.statItem}>
-            <Ionicons
-              name="logo-twitter"
-              size={32}
-              color={Colors.light.cart}
-            />
-            <Text style={styles.statNumber}>{breeds.third.name}</Text>
-            <Text style={styles.statLabel}>{breeds.third.characteristics}</Text>
-          </View>
+          {previewBreeds.map((b, idx) => (
+            <View key={b._id} style={styles.statItem}>
+              <Ionicons
+                name="logo-twitter"
+                size={32}
+                color={idx === 0 ? Colors.light.success : idx === 1 ? Colors.light.pending : Colors.light.cart}
+              />
+              <Text style={styles.batchText}>{b.breedName}</Text>
+              <Text style={styles.statLabel}>{b.description || '-'}</Text>
+            </View>
+          ))}
         </View>
 
         {/* Chat */}
         <View>
           <Text style={styles.batchText}>Chat</Text>
         </View>
-        <View style={styles.sectionCard}>
-          <View style={styles.iconContainer}>
-            <Image source={shoula} style={{width:60, height:60, borderRadius:50}} />
-            <View>
-              <Text style={styles.batchText}>{chat.name}</Text>
-              <Text>
-                {chat.message}
-              </Text>
-            </View>
+        {chats.length === 0 ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.infoText}>No messages yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.sectionCard}>
+            <View style={styles.iconContainer}>
+              <Image source={shoula} style={{width:60, height:60, borderRadius:50}} />
+              <View>
+                <Text style={styles.batchText}>{chats[0].name}</Text>
+                <Text>
+                  {chats[0].lastMessage || ''}
+                </Text>
+              </View>
 
-            <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
-              <Text style={[styles.buttonText, { color: Colors.light.success }, { fontWeight: 'light' }]}>
-                {chat.time}
-              </Text>
+              <View style={[styles.buttonContainer, { backgroundColor: 'none' }]}>
+                <Text style={[styles.buttonText, { color: Colors.light.success }, { fontWeight: 'light' }]}>
+                  {chats[0].time || ''}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
 
       </ScrollView>
@@ -495,6 +397,16 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "white",
     borderRadius: 10,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 10,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#dc2626',
+    marginTop: 10,
   },
   iconContainer: {
     flexDirection: "row",
