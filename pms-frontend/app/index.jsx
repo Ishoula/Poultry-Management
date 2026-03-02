@@ -25,13 +25,15 @@ const index = () => {
         </View>
         {/* Buttons */}
         <View style={styles.buttonDiv}>
-          <Link href="/login">
+          <Link href="/login" asChild>
             <Pressable style={styles.button}>
               <Text style={styles.buttonText}>Sign In</Text>
             </Pressable>
           </Link>
+
           <Text style={{ padding: 10 }}>OR</Text>
-          <Link href="/signup">
+
+          <Link href="/signup" asChild>
             <Pressable style={styles.button}>
               <Text style={styles.buttonText}>Sign Up</Text>
             </Pressable>
