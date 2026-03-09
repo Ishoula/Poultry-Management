@@ -10,9 +10,9 @@ export default function Navbar() {
 
   const menuItems = [
     {
-      title: 'Dashboard',
+      title: 'Home',
       icon: 'grid-outline',
-      href: '/(tabs)/dashboard',
+      href: '/(tabs)/home',
     },
     {
       title: 'Batches',

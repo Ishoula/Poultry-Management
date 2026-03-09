@@ -83,7 +83,7 @@ const NewTaskScreen = () => {
     };
 
     console.log('New Task:', task);
-    // TODO: Save to state / context / API / AsyncStorage / navigate back
+ 
   };
 
   return (

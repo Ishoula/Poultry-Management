@@ -128,24 +128,25 @@ const Batch = () => {
                         </View>
                         {loading ? <Text style={styles.subtitle}>Loading...</Text> : null}
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                        <TouchableOpacity 
-                        style={styles.registerButton}
-                         onPress={() => router.push('addBatch')}
-                        >
-                            <View style={styles.registerIconBadge}>
-                                <Icon name="add" size={18} color={Colors.light.success} />
-                            </View>
-                            <Text style={styles.registerButtonText}>Register a new batch</Text>
-                        </TouchableOpacity>
+
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>My Breeds</Text>
-                            <TouchableOpacity  onPress={()=>router.push('/(tabs)/breeds')}>
+                            <TouchableOpacity onPress={() => router.push('/breeds')}>
                                 <Text style={styles.sectionAction}>View Breeds</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 }
             />
+
+            <TouchableOpacity
+                style={styles.registerButton}
+                onPress={() => router.push('addBatch')}
+            >
+                <View style={styles.registerIconBadge}>
+                    <Icon name="add" size={18} color={Colors.light.success} />
+                </View>
+            </TouchableOpacity>
         </View>
     );
 };

@@ -12,14 +12,13 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import community from '../../assets/images/racoo.jpeg';
 import shoula from '../../assets/images/shoula.jpg';
 import agdede from '../../assets/images/racoo.jpeg';
 import pasca from '../../assets/images/loveOfMyLife.jpg';
 import sema from '../../assets/images/IMG-20250506-WA0007.jpg';
-import { useRoute } from '@react-navigation/native';
 
 const chatMessages = [
   { id: '1', sender: 'Shoula', avatar: shoula, message: 'Does any of you have eggs available for bulk purchase today?', time: '10:00 AM', isMe: false },
@@ -28,12 +27,13 @@ const chatMessages = [
   { id: '4', sender: 'Sema', avatar: sema, message: "I have a few crates left if you're interested.", time: '10:15 AM', isMe: false },
 ];
 
-const ChatScreen = ({ navigation }) => {
+const ChatScreen = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState(chatMessages);
   const flatListRef = useRef(null);
 
-  const router=useRouter()
+  const router = useRouter();
+  const { name } = useLocalSearchParams();
 
   const sendMessage = () => {
     if (message.trim()) {
@@ -69,14 +69,14 @@ const ChatScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/chats')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#1A1A1A" />
         </TouchableOpacity>
         
         <View style={styles.headerInfo}>
           <Image source={community} style={styles.groupAvatar} />
           <View style={styles.textContainer}>
-            <Text style={styles.groupName}>Musanze Community</Text>
+            <Text style={styles.groupName}>{typeof name === 'string' && name.trim() ? name : 'Chat'}</Text>
             <View style={styles.statusRow}>
               <View style={styles.onlineDot} />
               <Text style={styles.members}>122 members • 12 online</Text>

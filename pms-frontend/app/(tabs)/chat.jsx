@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Platform } from 'react-native';
 import UserNavbar from '../../components/UserNavbar';
+import { useRouter } from 'expo-router';
 
 import shoula from '../../assets/images/shoula.jpg';
 import agdede from '../../assets/images/racoo.jpeg';
@@ -18,8 +19,17 @@ const recentMessages = [
 ];
 
 const MessagesScreen = () => {
+  const router = useRouter();
+
+  const openChat = (item) => {
+    router.push({
+      pathname: '/chatScreen',
+      params: { chatId: item.id, name: item.name },
+    });
+  };
+
   const renderAvatarItem = ({ item }) => (
-    <TouchableOpacity style={styles.avatarWrapper}>
+    <TouchableOpacity style={styles.avatarWrapper} onPress={() => openChat(item)}>
       <View style={[styles.avatarBorder, { borderColor: item.online ? '#4ADE80' : '#E5E7EB' }]}>
         <Image source={item.avatar} style={styles.topAvatar} />
       </View>
@@ -28,7 +38,7 @@ const MessagesScreen = () => {
   );
 
   const renderMessageItem = ({ item }) => (
-    <TouchableOpacity activeOpacity={0.7} style={styles.messageCard}>
+    <TouchableOpacity activeOpacity={0.7} style={styles.messageCard} onPress={() => openChat(item)}>
       <View style={styles.avatarContainer}>
         <Image source={item.avatar} style={styles.listAvatar} />
         {item.online && <View style={styles.onlineDot} />}

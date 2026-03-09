@@ -1,44 +1,71 @@
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const growthLogs = [
-    {
-        id: '1',
-        title: 'Death',
-        value: '2 birds',
-        date: '18 May 2024',
-        note: 'Sudden loss due to extreme heat stress in Pen A.',
-        icon: 'heart-broken',
-        iconColor: '#EF4444',
-    },
-    {
-        id: '2',
-        title: 'Diseases',
-        value: '12 birds isolated',
-        date: '15 May 2024',
-        note: 'Respiratory infection detected in Batch 4.',
-        icon: 'medication',
-        iconColor: '#F59E0B',
-    },
-    {
-        id: '3',
-        title: 'Sold',
-        value: '50 Kuroilers',
-        date: '10 May 2024',
-        note: 'Sold to Local Market Vendor at $4.50/kg.',
-        icon: 'storefront',
-        iconColor: '#3B82F6',
-    },
-];
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { authFetch } from '../../context/AuthContext';
 
 const GrowthLogScreen = () => {
+    const router = useRouter();
+
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const loadLogs = React.useCallback(async () => {
+        try {
+            setError('');
+            setLoading(true);
+            const data = await authFetch('/growthLog', { method: 'GET' });
+            const list = Array.isArray(data?.logs) ? data.logs : [];
+            setLogs(list);
+        } catch (e) {
+            setError(e?.message || 'Failed to load logs');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadLogs();
+    }, [loadLogs]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadLogs();
+        }, [loadLogs])
+    );
+
+    const uiLogs = useMemo(() => {
+        const iconByType = {
+            death: { icon: 'heart-broken', iconColor: '#EF4444' },
+            feed: { icon: 'grass', iconColor: '#F59E0B' },
+            weight: { icon: 'scale', iconColor: '#3B82F6' },
+            vaccine: { icon: 'needle', iconColor: '#10B981' },
+        };
+        return logs.map((l) => {
+            const logDate = l.date ? new Date(l.date) : null;
+            const date = logDate && !Number.isNaN(logDate.getTime()) ? logDate.toLocaleDateString() : '-';
+            const iconMeta = iconByType[l.type] || { icon: 'clipboard-text', iconColor: '#6B7280' };
+            const unitLabel = l.unit === 'count' ? 'birds' : l.unit;
+            return {
+                id: l._id,
+                title: (l.type || 'log').toString().toUpperCase(),
+                value: `${l.value} ${unitLabel}`,
+                date,
+                note: l.notes || '',
+                ...iconMeta,
+            };
+        });
+    }, [logs]);
+
     const renderLog = ({ item }) => (
         <View style={styles.logCard}>
             <View style={styles.cardHeader}>
                 <View style={styles.titleRow}>
-                    <View style={[styles.iconBadge, { backgroundColor: `${item.iconColor}1A` }]}> 
+                    <View style={[styles.iconBadge, { backgroundColor: `${item.iconColor}1A` }]}>
                         <Icon name={item.icon} size={22} color={item.iconColor} />
                     </View>
                     <View style={styles.titleTextWrap}>
@@ -66,7 +93,7 @@ const GrowthLogScreen = () => {
         <View style={styles.safeArea}>
             <UserNavbar />
             <FlatList
-                data={growthLogs}
+                data={uiLogs}
                 renderItem={renderLog}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
@@ -80,19 +107,25 @@ const GrowthLogScreen = () => {
                             <Text style={styles.title}>Growth Log</Text>
                             <View style={{ width: 40 }} />
                         </View>
-                        <TouchableOpacity style={styles.addButton}>
-                            <View style={styles.addIconBadge}>
-                                <Icon name="add" size={18} color={Colors.light.success} />
-                            </View>
-                            <Text style={styles.addButtonText}>Add a record</Text>
-                        </TouchableOpacity>
+
+                        {loading ? <Text style={styles.sectionMeta}>Loading...</Text> : null}
+                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>My records</Text>
-                            <Text style={styles.sectionMeta}>{`${growthLogs.length} Total`}</Text>
+                            <Text style={styles.sectionMeta}>{`${uiLogs.length} Total`}</Text>
                         </View>
                     </View>
                 }
             />
+
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => router.push('/(screens)/addGrowthLog')}
+                activeOpacity={0.8}
+            >
+                <Icon name="plus" size={32} color="#fff" />
+            </TouchableOpacity>
         </View>
     );
 };
@@ -135,28 +168,22 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: Colors.light.text,
     },
-    addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    fab: {
+        position: 'absolute',
+        bottom: 30,
+        right: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: Colors.light.success,
-        borderRadius: 28,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-    },
-    addIconBadge: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#ffffff',
-        alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
-    },
-    addButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '600',
-        letterSpacing: 0.2,
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+        marginBottom: 40,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -174,11 +201,15 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
         letterSpacing: 0.6,
     },
+    errorText: {
+        fontSize: 14,
+        color: '#dc2626',
+    },
     logCard: {
         backgroundColor: '#ffffff',
         borderRadius: 20,
         padding: 18,
-        marginBottom: 18,
+        marginBottom: 50,
         shadowColor: '#0F172A',
         shadowOpacity: 0.06,
         shadowOffset: { width: 0, height: 6 },
@@ -229,7 +260,84 @@ const styles = StyleSheet.create({
     },
     metaRow: {
         flexDirection: 'row',
+        marginBottom: 30,
+    },
+    metaBlock: {
+        marginRight: 20,
+    },
+    metaLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+    },
+    metaValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: Colors.light.text,
+    },
+    noteLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginBottom: 6,
+    },
+    noteText: {
+        fontSize: 14,
+        color: '#6B7280',
+        lineHeight: 20,
+        shadowOpacity: 0.06,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
         marginBottom: 12,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        flex: 1,
+        marginRight: 12,
+    },
+    iconBadge: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 14,
+    },
+    titleTextWrap: {
+        flex: 1,
+    },
+    logTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: Colors.light.text,
+        marginBottom: 6,
+    },
+    logMetaLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.6,
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+    },
+    logMetaValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: Colors.light.text,
+        marginTop: 4,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        marginBottom: 30,
     },
     metaBlock: {
         marginRight: 20,
