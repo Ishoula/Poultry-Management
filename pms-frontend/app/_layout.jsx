@@ -1,12 +1,11 @@
 import { Stack } from 'expo-router'
-import SafeScreen from '../components/SafeScreen'
+import {SafeScreen} from '../components/SafeScreen'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts, Roboto_400Regular, Roboto_700Bold } from '@expo-google-fonts/roboto'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 
-import AuthProvider from '../context/AuthContext'
-
+import { AuthProvider } from '../context/AuthContext'
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {

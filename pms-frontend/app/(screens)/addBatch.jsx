@@ -77,11 +77,10 @@ const AddBatch = () => {
                     breed: selectedBreedId,
                     total_chickens: birds,
                     start_date: parsedDate.toISOString(),
+                    status: isActive ? 'active' : 'inactive',
                 }),
             });
-            Alert.alert('Success', 'Batch created successfully!', [
-                { text: 'OK', onPress: () => router.replace('/(tabs)/batch') },
-            ]);
+            router.replace('/(tabs)/batch');
         } catch (e) {
             Alert.alert('Error', e?.message || 'Failed to create batch. Please try again.');
         } finally {

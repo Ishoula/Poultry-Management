@@ -1,119 +1,125 @@
+import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-import { authFetch } from '../../context/AuthContext';
+
+const tasksData = [
+    { id: '1', title: 'Clean the water tanks', category: 'Cleaning', time: '08:00 AM', priority: 'High', completed: false },
+    { id: '2', title: 'Morning Feeding', category: 'Feeding', time: '07:00 AM', priority: 'Medium', completed: false },
+    { id: '3', title: 'Temperature Check', category: 'Environment', time: '06:00 AM', priority: 'Low', completed: true },
+    { id: '4', title: 'Vaccination - Batch A', category: 'Health', time: '10:30 AM', priority: 'High', completed: false },
+];
 
 const priorityStyles = {
-    High: { bg: Colors.light.priorityHighBg, color: Colors.light.priorityHigh },
-    Medium: { bg: Colors.light.priorityMediumBg, color: Colors.light.priorityMedium },
-    Low: { bg: Colors.light.priorityLowBg, color: Colors.light.priorityLow },
+    High: { bg: '#FEE2E2', color: '#EF4444', dot: '#EF4444' },
+    Medium: { bg: '#FEF3C7', color: '#D97706', dot: '#D97706' },
+    Low: { bg: '#E0F2FE', color: '#0284C7', dot: '#0284C7' },
 };
 
 const TasksScreen = () => {
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const router = useRouter();
+    const [tasks, setTasks] = useState(tasksData);
+    const [activeTab, setActiveTab] = useState('Pending'); // Pending | Completed
 
-    useEffect(() => {
-        let mounted = true;
-
-        (async () => {
-            try {
-                setError('');
-                setLoading(true);
-                const data = await authFetch('/tasks', { method: 'GET' });
-                const list = Array.isArray(data?.tasks) ? data.tasks : [];
-                if (mounted) setTasks(list);
-            } catch (e) {
-                if (mounted) setError(e?.message || 'Failed to load tasks');
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        })();
-
-        return () => {
-            mounted = false;
-        };
-    }, []);
-
-    const toggleTask = async (id) => {
-        // Optimistically flip the local state first for snappy UX
+    const toggleTask = (id) => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setTasks((prev) =>
-            prev.map((task) => (task._id === id ? { ...task, completed: !task.completed } : task))
+            prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
         );
-        try {
-            const task = tasks.find((t) => t._id === id);
-            await authFetch(`/tasks/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ completed: !task.completed }),
-            });
-        } catch (e) {
-            // Roll back on failure
-            setTasks((prev) =>
-                prev.map((task) => (task._id === id ? { ...task, completed: !task.completed } : task))
-            );
-            console.error('Failed to update task:', e?.message);
-        }
     };
+
+    const filteredTasks = tasks.filter(t => activeTab === 'Pending' ? !t.completed : t.completed);
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <UserNavbar />
+            <UserNavbar />
+            
+            <View style={styles.headerSection}>
+                <Text style={styles.pageTitle}>Daily Chores</Text>
+                <Text style={styles.pageSubtitle}>Keep your flock healthy and your farm organized.</Text>
+                
+                {/* Segmented Tab Control */}
+                <View style={styles.tabBar}>
+                    {['Pending', 'Completed'].map((tab) => (
+                        <TouchableOpacity 
+                            key={tab} 
+                            style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
+                            onPress={() => setActiveTab(tab)}
+                        >
+                            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                                {tab} {tab === 'Pending' && tasks.filter(t => !t.completed).length > 0 && `(${tasks.filter(t => !t.completed).length})`}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
 
-                <View style={styles.bodyWrapper}>
-                    <Text style={styles.pageTitle}>Tasks</Text>
-                    <Text style={styles.pageSubtitle}>Manage your poultry routines and stay ahead of chores.</Text>
-
-                    {loading ? <Text style={styles.pageSubtitle}>Loading...</Text> : null}
-                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                    <View style={styles.tasksStack}>
-                        {tasks.map((task) => {
-                            const isCompleted = task.completed;
+            <ScrollView 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.tasksStack}>
+                    {filteredTasks.length > 0 ? (
+                        filteredTasks.map((task) => {
                             const badgeStyle = priorityStyles[task.priority];
-
                             return (
-                                <View key={task._id} style={[styles.taskCard, isCompleted && styles.taskCardDone]}>
+                                <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardDone]}>
                                     <TouchableOpacity
-                                        style={[
-                                            styles.checkbox,
-                                            isCompleted ? styles.checkboxChecked : styles.checkboxDefault,
-                                        ]}
-                                        onPress={() => toggleTask(task._id)}
+                                        activeOpacity={0.7}
+                                        style={[styles.checkbox, task.completed ? styles.checkboxChecked : styles.checkboxDefault]}
+                                        onPress={() => toggleTask(task.id)}
                                     >
-                                        {isCompleted && <Ionicons name="checkmark" size={18} color={Colors.light.topBackground} />}
+                                        {task.completed && <Ionicons name="checkmark-sharp" size={20} color="white" />}
                                     </TouchableOpacity>
 
                                     <View style={styles.cardContent}>
-                                        <Text style={[styles.taskTitle, isCompleted && styles.taskTitleDone]}>{task.title}</Text>
+                                        <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]}>
+                                            {task.title}
+                                        </Text>
                                         <View style={styles.metaRow}>
-                                            <View style={styles.metaGroup}>
-                                                <Ionicons name="pricetag-outline" size={16} color={Colors.light.icon} />
-                                                <Text style={styles.metaText}>{task.category}</Text>
+                                            <View style={styles.tagBadge}>
+                                                <Text style={styles.tagText}>{task.category}</Text>
                                             </View>
-                                            <View style={styles.metaGroup}>
-                                                <Ionicons name="time-outline" size={16} color={Colors.light.icon} />
-                                                <Text style={styles.metaText}>{task.time}</Text>
+                                            <View style={styles.timeGroup}>
+                                                <Ionicons name="time-outline" size={14} color="#94A3B8" />
+                                                <Text style={styles.timeText}>{task.time}</Text>
                                             </View>
                                         </View>
                                     </View>
 
-                                    <View style={[styles.priorityBadge, { backgroundColor: badgeStyle.bg }]}>
-                                        <Text style={[styles.priorityLabel, { color: badgeStyle.color }]}>{task.priority}</Text>
-                                    </View>
+                                    {!task.completed && (
+                                        <View style={[styles.priorityDot, { backgroundColor: badgeStyle.dot }]} />
+                                    )}
                                 </View>
                             );
-                        })}
-                    </View>
+                        })
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <View style={styles.emptyIconCircle}>
+                                <Ionicons name="sparkles-outline" size={40} color={Colors.light.success} />
+                            </View>
+                            <Text style={styles.emptyTitle}>
+                                {activeTab === 'Pending' ? "All caught up!" : "No completed tasks"}
+                            </Text>
+                            <Text style={styles.emptySubtitle}>
+                                {activeTab === 'Pending' ? "Take a break, you've done everything for now." : "Tasks you finish will show up here."}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
 
-            <TouchableOpacity style={styles.fab}>
-                <Ionicons name="add" size={28} color={Colors.light.topBackground} />
+            <TouchableOpacity 
+                activeOpacity={0.9} 
+                style={styles.fab} 
+                onPress={() => router.push('/addTask')}
+            >
+                <Ionicons name="add" size={32} color="white" />
             </TouchableOpacity>
         </View>
     );
@@ -122,119 +128,74 @@ const TasksScreen = () => {
 export default TasksScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    scrollContent: {
-        paddingBottom: 32,
-    },
-    bodyWrapper: {
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        gap: 18,
-    },
-    pageTitle: {
-        fontSize: 32,
-        fontWeight: '700',
-        color: Colors.light.text,
-    },
-    pageSubtitle: {
-        fontSize: 15,
-        color: Colors.light.textMuted,
-        lineHeight: 22,
-    },
-    errorText: {
-        fontSize: 14,
-        color: '#dc2626',
-        lineHeight: 20,
-    },
-    tasksStack: {
-        gap: 12,
-    },
+    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    headerSection: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: '#FFF', paddingBottom: 10 },
+    pageTitle: { fontSize: 28, fontWeight: '800', color: '#1E293B' },
+    pageSubtitle: { fontSize: 14, color: '#64748B', marginTop: 4, marginBottom: 20 },
+    
+    tabBar: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 12, padding: 4 },
+    tabItem: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+    tabItemActive: { backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
+    tabText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+    tabTextActive: { color: Colors.light.success },
+
+    scrollContent: { padding: 20, paddingBottom: 100 },
+    tasksStack: { gap: 14 },
+    
     taskCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.light.topBackground,
-        borderRadius: 18,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        shadowColor: '#1A202C0F',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 4,
-    },
-    taskCardDone: {
-        opacity: 0.75,
-    },
-    checkbox: {
-        width: 34,
-        height: 34,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-    },
-    checkboxDefault: {
-        borderWidth: 2,
-        borderColor: '#C9D3DF',
-    },
-    checkboxChecked: {
-        backgroundColor: Colors.light.success,
-    },
-    cardContent: {
-        flex: 1,
-        gap: 4,
-    },
-    taskTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.light.text,
-    },
-    taskTitleDone: {
-        color: '#94A3B8',
-        textDecorationLine: 'line-through',
-    },
-    metaRow: {
-        flexDirection: 'row',
-        gap: 14,
-        alignItems: 'center',
-    },
-    metaGroup: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    metaText: {
-        fontSize: 13,
-        color: '#6C7A91',
-    },
-    priorityBadge: {
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-    },
-    priorityLabel: {
-        fontSize: 12,
-        fontWeight: '700',
-        letterSpacing: 0.4,
-        textTransform: 'uppercase',
-    },
-    fab: {
-        position: 'absolute',
-        bottom: 32,
-        right: 24,
-        width: 58,
-        height: 58,
+        backgroundColor: '#FFF',
         borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.light.success,
-        shadowColor: '#1A472A44',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 6,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
     },
+    taskCardDone: { opacity: 0.6, backgroundColor: '#F8FAFC' },
+    
+    checkbox: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+    checkboxDefault: { borderWidth: 2, borderColor: '#E2E8F0' },
+    checkboxChecked: { backgroundColor: Colors.light.success },
+    
+    cardContent: { flex: 1 },
+    taskTitle: { fontSize: 16, fontWeight: '700', color: '#334155' },
+    taskTitleDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+    
+    metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 10 },
+    tagBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+    tagText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
+    timeGroup: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    timeText: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+    
+    priorityDot: { width: 8, height: 8, borderRadius: 4, marginLeft: 10 },
+
+    emptyContainer: { alignItems: 'center', marginTop: 60 },
+    emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#334155' },
+    emptySubtitle: { fontSize: 14, color: '#94A3B8', textAlign: 'center', marginTop: 6, paddingHorizontal: 40 },
+// Update these specific values in your styles object
+fab: {
+    position: 'absolute',
+    // Increase this value! 
+    // If you are using the custom Tab Bar we made, 90-100 is the sweet spot.
+    bottom: Platform.OS === 'ios' ? 110 : 90, 
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.light.success,
+    // Add zIndex to ensure it stays on top of all other elements
+    zIndex: 999, 
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+},
 });

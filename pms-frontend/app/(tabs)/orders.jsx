@@ -1,339 +1,185 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import UserNavbar from '../../components/UserNavbar';
-
 import { Colors } from '../../constants/colors';
 
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { authFetch } from '../../context/AuthContext';
+const ordersData = [
+    { id: '1', name: 'Shoula', breedType: 'Broilers', basis: 'Per kg', quantity: '25kg', price: '50,000 FRW' },
+    { id: '2', name: 'Delight', breedType: 'Layers', basis: 'Per kg', quantity: '20kg', price: '40,000 FRW' },
+    { id: '3', name: 'Pasca', breedType: 'Kuroilers', basis: 'Per chicken', quantity: '15 chickens', price: '30,000 FRW' },
+];
 
 const Orders = () => {
-
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        let mounted = true;
-
-        (async () => {
-            try {
-                setError('');
-                setLoading(true);
-                const data = await authFetch('/orders', { method: 'GET' });
-                const list = Array.isArray(data?.orders) ? data.orders : [];
-                if (mounted) setOrders(list);
-            } catch (e) {
-                if (mounted) setError(e?.message || 'Failed to load orders');
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        })();
-
-        return () => {
-            mounted = false;
-        };
-    }, []);
+    const router = useRouter();
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <UserNavbar />
-                <Text style={styles.pageTitle}>Orders</Text>
-                {loading ? <Text style={styles.helperText}>Loading...</Text> : null}
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                {/* Featured / Highlighted breed */}
-                <View style={styles.featuredCard}>
-                    <Text style={styles.featuredTitle}>Your orders</Text>
+            <UserNavbar />
+            
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <View style={styles.header}>
+                    <Text style={styles.pageTitle}>Order History</Text>
+                    <Text style={styles.pageSubtitle}>Track your sales and customer distributions.</Text>
                 </View>
+
                 <View style={styles.statsContainer}>
-                    {orders.map((order) => (
-                        <View key={order._id} style={styles.statItem}>
-                            <MaterialCommunityIcons name={'cart'} size={24} color={Colors.light.success} />
-                            <Text style={styles.breedName}>{order.name}</Text>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Breed Type: </Text>
-                                <Text style={styles.detailValue}>{order.breedType}</Text>
+                    {ordersData.map((order) => (
+                        <TouchableOpacity key={order.id} activeOpacity={0.7} style={styles.orderCard}>
+                            <View style={styles.cardHeader}>
+                                <View style={styles.iconBox}>
+                                    <MaterialCommunityIcons name="package-variant-closed" size={22} color={Colors.light.success} />
+                                </View>
+                                <View style={styles.priceBadge}>
+                                    <Text style={styles.priceText}>{order.price}</Text>
+                                </View>
                             </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Basis: </Text>
-                                <Text style={styles.detailValue}>{order.basis}</Text>
+
+                            <Text style={styles.customerName}>{order.name}</Text>
+                            
+                            <View style={styles.detailsGrid}>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>BREED</Text>
+                                    <Text style={styles.detailValue}>{order.breedType}</Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>QUANTITY</Text>
+                                    <Text style={styles.detailValue}>{order.quantity}</Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>BASIS</Text>
+                                    <Text style={styles.detailValue}>{order.basis}</Text>
+                                </View>
                             </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Quantity: </Text>
-                                <Text style={styles.detailValue}>{order.quantity}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Price: </Text>
-                                <Text style={styles.detailValue}>{order.price}</Text>
-                            </View>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
-
-
-                <TouchableOpacity
-
-                    style={{
-
-                        flexDirection: 'row',
-
-                        alignItems: 'center',
-
-                        justifyContent: 'center',
-
-                        marginBottom: 30,
-
-                        backgroundColor: Colors.light.topBackground,
-
-                        padding: 12,
-
-                        borderRadius: 10,
-
-                        marginHorizontal: 20,
-
-                    }}
-
-                    onPress={() => {
-
-                        // Add your logic here (e.g., navigate to add breed screen)
-
-                        console.log('Add orderr tapped');
-
-                    }}
-
-                >
-
-                    <Text style={{ color: Colors.light.success, fontWeight: 'bold', marginRight: 8, fontSize: 18 }}>
-
-                        Add order
-
-                    </Text>
-
-                    <MaterialCommunityIcons name="cart-plus" size={24} color={Colors.light.success} />
-
-                </TouchableOpacity>
-
             </ScrollView>
 
+            {/* Floating Action Button - Positioned above Tabs */}
+            <TouchableOpacity 
+                style={styles.fab} 
+                onPress={() => router.push('/addOrder')}
+            >
+                <MaterialCommunityIcons name="cart-plus" size={28} color="white" />
+            </TouchableOpacity>
         </View>
-
     );
-
 };
-
-
 
 export default Orders;
 
-
-
 const styles = StyleSheet.create({
-
-
-
-
-
-
-
     container: {
-
         flex: 1,
-
-        backgroundColor: Colors.light.background || '#f8f9fa',
-
+        backgroundColor: '#F8FAFC',
     },
-
+    scrollContent: {
+        paddingBottom: 120, // Space for FAB and Tabs
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        marginBottom: 20,
+    },
     pageTitle: {
-
-        fontFamily: 'Roboto',
-
-        fontSize: 24,
-
-        fontWeight: 'bold',
-
-        textAlign: 'center',
-
-        marginTop: 16,
-
-        // marginBottom: 10,
-
-        color: Colors.light.text,
-
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#1E293B',
     },
-
-    helperText: {
-
-        textAlign: 'center',
-
-        color: '#6B7280',
-
-        marginTop: 8,
-
-        marginBottom: 8,
-
-    },
-
-    errorText: {
-
-        textAlign: 'center',
-
-        color: '#dc2626',
-
-        marginTop: 8,
-
-        marginBottom: 8,
-
-    },
-
-    sectionTitle: {
-
-        marginLeft: 20,
-
-        marginTop: 24,
-
-        marginBottom: 12,
-
-        color: Colors.light.text,
-
-        fontWeight: 'bold',
-
-        fontSize: 18,
-
-    },
-
-    featuredCard: {
-
-        margin: 20,
-
-        padding: 20,
-
-        backgroundColor: Colors.light.topBackground || '#ffffff',
-
-        borderRadius: 16,
-
-        alignItems: 'center',
-
-        shadowColor: '#000',
-
-        shadowOffset: { width: 0, height: 2 },
-
-        shadowOpacity: 0.1,
-
-        shadowRadius: 8,
-
-        elevation: 4,
-
-    },
-
-    featuredTitle: {
-
-        fontFamily: 'Roboto',
-        fontSize: 20,
-
-        fontWeight: 'bold',
-
-        color: Colors.light.success,
-
-    },
-
-    featuredSubtitle: {
-
-        marginTop: 6,
-
-        color: '#666',
-
+    pageSubtitle: {
         fontSize: 14,
-
-    },
-
-    statsContainer: {
-
-        paddingHorizontal: 16,
-
-        paddingBottom: 24,
-
-        gap: 16,
-
-    },
-
-    statItem: {
-
-        backgroundColor: '#fff',
-
-        borderRadius: 16,
-
-        padding: 20,
-
-        alignItems: 'center',
-
-        shadowColor: '#000',
-
-        shadowOffset: { width: 0, height: 2 },
-
-        shadowOpacity: 0.08,
-
-        shadowRadius: 8,
-
-        elevation: 3,
-
-    },
-
-    breedName: {
-
-        fontSize: 18,
-
-        fontWeight: '700',
-
-        color: Colors.light.text,
-
-        marginTop: 12,
-
-        marginBottom: 4,
-
-    },
-
-    breedType: {
-
-        fontSize: 15,
-
-        color: '#555',
-
-        marginBottom: 12,
-
-        textAlign: 'center',
-
-    },
-
-    detailRow: {
-
-        flexDirection: 'row',
-
-        alignItems: 'center',
-
+        color: '#64748B',
         marginTop: 4,
-
     },
-
-    detailLabel: {
-
-        fontSize: 18,
-
-        color: '#333',
-
+    statsContainer: {
+        paddingHorizontal: 16,
+        gap: 16,
+    },
+    orderCard: {
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    iconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#F0FDF4',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    priceBadge: {
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    priceText: {
+        color: '#1E293B',
         fontWeight: '700',
-
+        fontSize: 13,
     },
-
-    detailValue: {
-
+    customerName: {
         fontSize: 18,
-
-        fontWeight: '500',
-
-        color: '#474747',
-
+        fontWeight: '700',
+        color: '#1E293B',
+        marginBottom: 12,
     },
-
+    detailsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        paddingTop: 12,
+    },
+    detailItem: {
+        flex: 1,
+    },
+    detailLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#94A3B8',
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    detailValue: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    fab: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 110 : 90,
+        right: 24,
+        width: 60,
+        height: 60,
+        borderRadius: 20,
+        backgroundColor: Colors.light.success,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 8,
+        shadowColor: Colors.light.success,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        zIndex: 999,
+    },
 });

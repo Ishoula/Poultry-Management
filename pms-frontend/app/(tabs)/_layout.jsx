@@ -1,25 +1,26 @@
-import { Ionicons } from '@expo/vector-icons'
-import { Redirect, Tabs } from 'expo-router'
-import { Platform, StyleSheet, Text, View } from 'react-native'
-import { Colors } from '../../constants/colors'
-import { useAuth } from '../../context/AuthContext'
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Redirect, Tabs } from 'expo-router';
+import { Platform, StyleSheet, Text, View, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import { Colors } from '../../constants/colors';
+import { useAuth } from '../../context/AuthContext';
 
 /** Screens that live inside (tabs)/ but should NOT appear in the tab bar */
-const HIDDEN_SCREENS = [
-  'dashboard',
-  'addBatch',
-  'addBreed',
-  'addGrowthLog',
-  'addOrder',
-  'addTask',
-  'chatScreen',
-  'breeds',
-  'growthLog',
-]
 
-const HIDDEN_OPTIONS = {
-  tabBarButton: () => null,
-}
+// Custom Tab Button to inject Haptic Feedback
+const TabBarButton = (props) => (
+  <Pressable
+    {...props}
+    onPress={(e) => {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      props.onPress?.(e);
+    }}
+  />
+);
 
 // Custom tab bar label
 function TabLabel({ label, focused }) {
@@ -32,27 +33,27 @@ function TabLabel({ label, focused }) {
     >
       {label}
     </Text>
-  )
+  );
 }
 
-// Custom tab bar icon wrapper that draws the pill behind the active icon
+// Custom tab bar icon wrapper with the "Pill" effect
 function TabIcon({ name, focused, color, size }) {
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
       <Ionicons
         name={focused ? name.replace('-outline', '') : name}
-        size={focused ? size - 1 : size - 2}
+        size={focused ? size - 2 : size - 4}
         color={color}
       />
     </View>
-  )
+  );
 }
 
 export default function Layout() {
-  const { initializing, isSignedIn } = useAuth()
+  const { initializing, isSignedIn } = useAuth();
 
   if (!initializing && !isSignedIn) {
-    return <Redirect href={'/(auth)/login'} />
+    return <Redirect href={'/(auth)/login'} />;
   }
 
   return (
@@ -62,12 +63,18 @@ export default function Layout() {
         tabBarActiveTintColor: Colors.light.success,
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarShowLabel: true,
+        tabBarButton: TabBarButton,
+        tabBarItemStyle: { flex: 1 },
         tabBarStyle: styles.tabBar,
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
+          ) : undefined,
       }}
     >
       {/* ── VISIBLE TABS ─────────────────────────────── */}
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           tabBarLabel: ({ focused }) => <TabLabel label="Home" focused={focused} />,
           tabBarIcon: ({ color, size, focused }) => (
@@ -81,7 +88,7 @@ export default function Layout() {
         options={{
           tabBarLabel: ({ focused }) => <TabLabel label="Batches" focused={focused} />,
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="egg-outline" focused={focused} color={color} size={size} />
+            <TabIcon name="batch-prediction" focused={focused} color={color} size={size} />
           ),
         }}
       />
@@ -97,6 +104,15 @@ export default function Layout() {
       />
 
       <Tabs.Screen
+        name="chat"
+        options={{
+          tabBarLabel: ({ focused }) => <TabLabel label="Chats" focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="chatbubble-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="orders"
         options={{
           tabBarLabel: ({ focused }) => <TabLabel label="Orders" focused={focused} />,
@@ -105,56 +121,64 @@ export default function Layout() {
           ),
         }}
       />
-
       <Tabs.Screen
-        name="chats"
+        name="growthLog"
         options={{
-          tabBarLabel: ({ focused }) => <TabLabel label="Chats" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="GrowthLog" focused={focused} />,
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="chatbubble-outline" focused={focused} color={color} size={size} />
+            <TabIcon name="receipt" focused={focused} color={color} size={size} />
           ),
         }}
       />
-
-      {/* ── HIDDEN SCREENS (must be declared so Expo Router doesn't auto-add them) ── */}
-      {HIDDEN_SCREENS.map((name) => (
-        <Tabs.Screen key={name} name={name} options={HIDDEN_OPTIONS} />
-      ))}
+      <Tabs.Screen
+        name="breeds"
+        options={{
+          tabBarLabel: ({ focused }) => <TabLabel label="Breeds" focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="egg-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      
     </Tabs>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 0,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : '#ffffff',
+    borderTopWidth: Platform.OS === 'ios' ? 0 : 1,
+    borderTopColor: '#F3F4F6',
     elevation: 0,
-    // Drop shadow above the bar
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 12,
-    height: Platform.OS === 'ios' ? 84 : 68,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingHorizontal: 4,
+    height: Platform.OS === 'ios' ? 88 : 68,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+    paddingHorizontal: 8,
   },
-  // Pill background behind the active icon
   iconWrap: {
-    width: 44,
-    height: 32,
+    width: 38,
+    height: 38,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
   },
   iconWrapActive: {
-    backgroundColor: `${Colors.light.success}18`, // subtle green tint pill
+    backgroundColor: `${Colors.light.success}15`,
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginTop: 6,
   },
   tabLabelActive: {
     color: Colors.light.success,
@@ -162,4 +186,4 @@ const styles = StyleSheet.create({
   tabLabelInactive: {
     color: '#9CA3AF',
   },
-})
+});

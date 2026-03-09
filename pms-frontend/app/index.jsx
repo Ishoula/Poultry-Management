@@ -1,50 +1,54 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Image } from 'expo-image'
-import { Link } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { Colors } from '../constants/colors'
 import logo from '../assets/images/logo.png'
-import Navbar from '../components/Navbar'
 
+const Index = () => {
+  const router = useRouter()
 
-const index = () => {
   return (
     <View style={styles.container}>
-      {/* Top Bar */}
-      <Navbar />
       {/* Image div */}
       <View style={styles.imageDiv}>
         <Image source={logo} style={styles.image} />
       </View>
 
       {/* Content */}
-
       <View style={styles.mainContent}>
         <View style={styles.content}>
-          <Text style={[styles.contentText, { fontWeight: 'bold', textAlign: 'center' }]}>Smart Poultry</Text>
-          <Text style={[styles.contentText, { fontSize: 16 }]}>Manage Your Poultry Farm with ease</Text>
+          <Text style={[styles.contentText, { fontWeight: 'bold', textAlign: 'center' }]}>
+            Smart Poultry
+          </Text>
+          <Text style={[styles.contentText, { fontSize: 16 }]}>
+            Manage Your Poultry Farm with ease
+          </Text>
         </View>
+
         {/* Buttons */}
         <View style={styles.buttonDiv}>
-          <Link href="/login" asChild>
-            <Pressable style={styles.button}>
-              <Text style={styles.buttonText}>Sign In</Text>
-            </Pressable>
-          </Link>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push('/(auth)/login')}
+          >
+            <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
 
           <Text style={{ padding: 10 }}>OR</Text>
 
-          <Link href="/signup" asChild>
-            <Pressable style={styles.button}>
-              <Text style={styles.buttonText}>Sign Up</Text>
-            </Pressable>
-          </Link>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push('/(auth)/signup')}
+          >
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
   )
 }
 
-export default index
+export default Index
 
 const styles = StyleSheet.create({
   container: {
@@ -52,31 +56,16 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  topBar: {
-    backgroundColor: Colors.light.topBackground,
-    width: '100%',
-    height: 50,
-    justifyContent: 'center'
-  },
-  topBarText: {
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'Roboto',
-    color: Colors.light.success
-  },
   imageDiv: {
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 20,
-    // backgroundColor:Colors.light.icon
-
   },
   image: {
     width: 200,
     height: 200,
-    borderRadius: 100
+    borderRadius: 100,
   },
   mainContent: {
     justifyContent: 'center',
@@ -84,12 +73,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
     padding: 20,
-    backgroundColor: Colors.light.topBackground
+    backgroundColor: Colors.light.topBackground,
   },
   contentText: {
     fontSize: 24,
     fontFamily: 'Roboto',
-    color: Colors.light.text
+    color: Colors.light.text,
   },
   buttonDiv: {
     flexDirection: 'row',
@@ -109,6 +98,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold'
-  }
+    fontWeight: 'bold',
+  },
 })

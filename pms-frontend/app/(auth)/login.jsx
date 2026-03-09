@@ -34,7 +34,7 @@ export default function SignInScreen() {
 
     try {
       await signIn({ email: emailAddress.trim(), password });
-      router.replace('/(tabs)/dashboard');
+      router.replace('/(tabs)/home');
     } catch (err) {
       setError(err?.message || 'Invalid email or password');
     } finally {

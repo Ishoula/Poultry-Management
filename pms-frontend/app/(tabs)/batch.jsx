@@ -1,35 +1,59 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 import React, { useEffect, useMemo, useState } from 'react';
 import { authFetch } from '../../context/AuthContext';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Batch = () => {
     const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const router = useRouter();
+
+    const loadBatches = React.useCallback(async () => {
+        try {
+            setError('');
+            setLoading(true);
+            const data = await authFetch('/batchs', { method: 'GET' });
+            const list = Array.isArray(data?.batches) ? data.batches : [];
+            setBatches(list);
+        } catch (e) {
+            setError(e?.message || 'Failed to load batches');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        let mounted = true;
-        (async () => {
-            try {
-                setError('');
-                setLoading(true);
-                const data = await authFetch('/batchs', { method: 'GET' });
-                const list = Array.isArray(data?.batches) ? data.batches : [];
-                if (mounted) setBatches(list);
-            } catch (e) {
-                if (mounted) setError(e?.message || 'Failed to load batches');
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        })();
+        loadBatches();
+    }, [loadBatches]);
 
-        return () => {
-            mounted = false;
-        };
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            loadBatches();
+        }, [loadBatches])
+    );
+
+    const confirmDelete = (batchId) => {
+        Alert.alert('Delete batch', 'This will permanently delete the batch.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await authFetch(`/batchs/${batchId}`, { method: 'DELETE' });
+                        loadBatches();
+                    } catch (e) {
+                        Alert.alert('Error', e?.message || 'Failed to delete batch');
+                    }
+                },
+            },
+        ]);
+    };
 
     const batchesData = useMemo(() => {
         return batches.map((b, idx) => {
@@ -61,7 +85,7 @@ const Batch = () => {
                                 <Text style={styles.statusText}>{item.status}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => confirmDelete(item.id)}>
                             <Icon name="more-vert" size={22} color={Colors.light.icon} />
                         </TouchableOpacity>
                     </View>
@@ -104,7 +128,10 @@ const Batch = () => {
                         </View>
                         {loading ? <Text style={styles.subtitle}>Loading...</Text> : null}
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                        <TouchableOpacity style={styles.registerButton}>
+                        <TouchableOpacity 
+                        style={styles.registerButton}
+                         onPress={() => router.push('addBatch')}
+                        >
                             <View style={styles.registerIconBadge}>
                                 <Icon name="add" size={18} color={Colors.light.success} />
                             </View>
@@ -112,7 +139,7 @@ const Batch = () => {
                         </TouchableOpacity>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>My Breeds</Text>
-                            <TouchableOpacity>
+                            <TouchableOpacity  onPress={()=>router.push('/(tabs)/breeds')}>
                                 <Text style={styles.sectionAction}>View Breeds</Text>
                             </TouchableOpacity>
                         </View>

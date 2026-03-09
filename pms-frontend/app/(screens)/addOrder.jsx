@@ -55,7 +55,7 @@ const AddOrder = () => {
               value={name}
               onChangeText={setName}
               placeholderTextColor="#aaa"
-              underlineColorAndroid="transparent" // Remove Android focus underline
+              underlineColorAndroid="transparent" 
             />
           </View>
           {/* Breed Type Dropdown */}

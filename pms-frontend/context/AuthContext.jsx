@@ -42,11 +42,11 @@ async function requestJson(path, options = {}) {
   const url = `${baseUrl}${path}`
 
   const res = await fetch(url, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     },
-    ...options,
   })
 
   const text = await res.text()
