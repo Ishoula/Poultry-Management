@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const tasksData = [
-    { id: '1', title: 'Clean the water tanks', category: 'Cleaning', time: '08:00 AM', priority: 'High', completed: false },
-    { id: '2', title: 'Morning Feeding', category: 'Feeding', time: '07:00 AM', priority: 'Medium', completed: false },
-    { id: '3', title: 'Temperature Check', category: 'Environment', time: '06:00 AM', priority: 'Low', completed: true },
-    { id: '4', title: 'Vaccination - Batch A', category: 'Health', time: '10:30 AM', priority: 'High', completed: false },
-];
+import { authFetch } from '../../context/AuthContext';
 
 const priorityStyles = {
     High: { bg: '#FEE2E2', color: '#EF4444', dot: '#EF4444' },
@@ -23,17 +18,78 @@ const priorityStyles = {
 
 const TasksScreen = () => {
     const router = useRouter();
-    const [tasks, setTasks] = useState(tasksData);
+    const [tasks, setTasks] = useState([]);
     const [activeTab, setActiveTab] = useState('Pending'); // Pending | Completed
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const toggleTask = (id) => {
+    const loadTasks = React.useCallback(async () => {
+        try {
+            setError('');
+            setLoading(true);
+            const data = await authFetch('/tasks', { method: 'GET' });
+            setTasks(Array.isArray(data) ? data : []);
+        } catch (e) {
+            setError(e?.message || 'Failed to load tasks');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadTasks();
+    }, [loadTasks]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadTasks();
+        }, [loadTasks])
+    );
+
+    const uiTasks = useMemo(() => {
+        return tasks.map((t) => {
+            const completed = String(t?.taskStatus || '').toLowerCase() === 'completed';
+            const time = t?.time || '';
+            return {
+                id: t?._id,
+                title: t?.taskName || 'Task',
+                category: t?.category ? String(t.category) : 'Other',
+                time,
+                priority: t?.priority ? String(t.priority) : 'medium',
+                completed,
+                raw: t,
+            };
+        });
+    }, [tasks]);
+
+    const toggleTask = async (id) => {
+        if (!id) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setTasks((prev) =>
-            prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
-        );
+
+        const existing = uiTasks.find((t) => t.id === id);
+        if (!existing) return;
+        const nextStatus = existing.completed ? 'pending' : 'completed';
+
+        setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, taskStatus: nextStatus } : t)));
+
+        try {
+            const updated = await authFetch(`/tasks/${id}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ taskStatus: nextStatus }),
+            });
+            if (updated?._id) {
+                setTasks((prev) => prev.map((t) => (t._id === id ? updated : t)));
+            } else {
+                await loadTasks();
+            }
+        } catch (e) {
+            await loadTasks();
+            Alert.alert('Update failed', e?.message || 'Failed to update task status');
+        }
     };
 
-    const filteredTasks = tasks.filter(t => activeTab === 'Pending' ? !t.completed : t.completed);
+    const filteredTasks = uiTasks.filter(t => activeTab === 'Pending' ? !t.completed : t.completed);
+    const pendingCount = uiTasks.filter(t => !t.completed).length;
 
     return (
         <View style={styles.container}>
@@ -52,7 +108,7 @@ const TasksScreen = () => {
                             onPress={() => setActiveTab(tab)}
                         >
                             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                                {tab} {tab === 'Pending' && tasks.filter(t => !t.completed).length > 0 && `(${tasks.filter(t => !t.completed).length})`}
+                                {tab} {tab === 'Pending' && pendingCount > 0 && `(${pendingCount})`}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -64,9 +120,26 @@ const TasksScreen = () => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.tasksStack}>
-                    {filteredTasks.length > 0 ? (
+                    {loading ? (
+                        <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                            <ActivityIndicator size="small" color={Colors.light.success} />
+                        </View>
+                    ) : error ? (
+                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                            <Text style={{ color: '#dc2626', fontWeight: '700', marginBottom: 10 }}>{error}</Text>
+                            <TouchableOpacity activeOpacity={0.8} style={styles.retryBtn} onPress={loadTasks}>
+                                <Text style={styles.retryText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : filteredTasks.length > 0 ? (
                         filteredTasks.map((task) => {
-                            const badgeStyle = priorityStyles[task.priority];
+                            const prioKey = String(task.priority || '').toLowerCase();
+                            const badgeStyle =
+                                prioKey === 'high'
+                                    ? priorityStyles.High
+                                    : prioKey === 'low'
+                                    ? priorityStyles.Low
+                                    : priorityStyles.Medium;
                             return (
                                 <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardDone]}>
                                     <TouchableOpacity
@@ -177,25 +250,23 @@ const styles = StyleSheet.create({
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: '#334155' },
     emptySubtitle: { fontSize: 14, color: '#94A3B8', textAlign: 'center', marginTop: 6, paddingHorizontal: 40 },
-// Update these specific values in your styles object
-fab: {
-    position: 'absolute',
-    // Increase this value! 
-    // If you are using the custom Tab Bar we made, 90-100 is the sweet spot.
-    bottom: Platform.OS === 'ios' ? 110 : 90, 
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.light.success,
-    // Add zIndex to ensure it stays on top of all other elements
-    zIndex: 999, 
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-},
+    retryBtn: { backgroundColor: Colors.light.success, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+    retryText: { color: '#FFF', fontWeight: '800', textTransform: 'uppercase', fontSize: 12 },
+    fab: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 110 : 90, 
+        right: 24,
+        width: 60,
+        height: 60,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.light.success,
+        zIndex: 999, 
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
 });

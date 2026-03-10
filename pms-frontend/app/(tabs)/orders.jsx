@@ -1,18 +1,60 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-
-const ordersData = [
-    { id: '1', name: 'Shoula', breedType: 'Broilers', basis: 'Per kg', quantity: '25kg', price: '50,000 FRW' },
-    { id: '2', name: 'Delight', breedType: 'Layers', basis: 'Per kg', quantity: '20kg', price: '40,000 FRW' },
-    { id: '3', name: 'Pasca', breedType: 'Kuroilers', basis: 'Per chicken', quantity: '15 chickens', price: '30,000 FRW' },
-];
+import { authFetch } from '../../context/AuthContext';
 
 const Orders = () => {
     const router = useRouter();
+
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const loadOrders = React.useCallback(async () => {
+        try {
+            setError('');
+            setLoading(true);
+            const data = await authFetch('/orders', { method: 'GET' });
+            setOrders(Array.isArray(data) ? data : []);
+        } catch (e) {
+            setError(e?.message || 'Failed to load orders');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadOrders();
+    }, [loadOrders]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadOrders();
+        }, [loadOrders])
+    );
+
+    const uiOrders = useMemo(() => {
+        return orders.map((o) => {
+            const breedName = typeof o?.breedType === 'object' ? (o?.breedType?.breedName || 'Breed') : 'Breed';
+            const basisLabel = String(o?.basis || '').toLowerCase() === 'per kg' ? 'Per kg' : 'Per chicken';
+            const quantityLabel = String(o?.basis || '').toLowerCase() === 'per kg' ? `${o?.quantity ?? ''}kg` : `${o?.quantity ?? ''} chickens`;
+            const priceLabel = typeof o?.price === 'number' ? o.price.toLocaleString() : String(o?.price ?? '');
+
+            return {
+                id: o?._id,
+                name: o?.name || 'Order',
+                breedType: breedName,
+                basis: basisLabel,
+                quantity: quantityLabel,
+                price: priceLabel,
+                raw: o,
+            };
+        });
+    }, [orders]);
 
     return (
         <View style={styles.container}>
@@ -28,35 +70,52 @@ const Orders = () => {
                 </View>
 
                 <View style={styles.statsContainer}>
-                    {ordersData.map((order) => (
-                        <TouchableOpacity key={order.id} activeOpacity={0.7} style={styles.orderCard}>
-                            <View style={styles.cardHeader}>
-                                <View style={styles.iconBox}>
-                                    <MaterialCommunityIcons name="package-variant-closed" size={22} color={Colors.light.success} />
+                    {loading ? (
+                        <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                            <ActivityIndicator size="small" color={Colors.light.success} />
+                        </View>
+                    ) : error ? (
+                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                            <Text style={{ color: '#dc2626', fontWeight: '700', marginBottom: 10 }}>{error}</Text>
+                            <TouchableOpacity activeOpacity={0.8} style={styles.retryBtn} onPress={loadOrders}>
+                                <Text style={styles.retryText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : uiOrders.length === 0 ? (
+                        <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                            <Text style={{ color: '#64748B', fontWeight: '700' }}>No orders yet</Text>
+                        </View>
+                    ) : (
+                        uiOrders.map((order) => (
+                            <TouchableOpacity key={order.id} activeOpacity={0.7} style={styles.orderCard}>
+                                <View style={styles.cardHeader}>
+                                    <View style={styles.iconBox}>
+                                        <MaterialCommunityIcons name="package-variant-closed" size={22} color={Colors.light.success} />
+                                    </View>
+                                    <View style={styles.priceBadge}>
+                                        <Text style={styles.priceText}>{order.price}</Text>
+                                    </View>
                                 </View>
-                                <View style={styles.priceBadge}>
-                                    <Text style={styles.priceText}>{order.price}</Text>
-                                </View>
-                            </View>
 
-                            <Text style={styles.customerName}>{order.name}</Text>
-                            
-                            <View style={styles.detailsGrid}>
-                                <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>BREED</Text>
-                                    <Text style={styles.detailValue}>{order.breedType}</Text>
+                                <Text style={styles.customerName}>{order.name}</Text>
+                                
+                                <View style={styles.detailsGrid}>
+                                    <View style={styles.detailItem}>
+                                        <Text style={styles.detailLabel}>BREED</Text>
+                                        <Text style={styles.detailValue}>{order.breedType}</Text>
+                                    </View>
+                                    <View style={styles.detailItem}>
+                                        <Text style={styles.detailLabel}>QUANTITY</Text>
+                                        <Text style={styles.detailValue}>{order.quantity}</Text>
+                                    </View>
+                                    <View style={styles.detailItem}>
+                                        <Text style={styles.detailLabel}>BASIS</Text>
+                                        <Text style={styles.detailValue}>{order.basis}</Text>
+                                    </View>
                                 </View>
-                                <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>QUANTITY</Text>
-                                    <Text style={styles.detailValue}>{order.quantity}</Text>
-                                </View>
-                                <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>BASIS</Text>
-                                    <Text style={styles.detailValue}>{order.basis}</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
+                            </TouchableOpacity>
+                        ))
+                    )}
                 </View>
             </ScrollView>
 
@@ -99,6 +158,18 @@ const styles = StyleSheet.create({
     statsContainer: {
         paddingHorizontal: 16,
         gap: 16,
+    },
+    retryBtn: { 
+        backgroundColor: Colors.light.success, 
+        paddingHorizontal: 14, 
+        paddingVertical: 10, 
+        borderRadius: 12 
+    },
+    retryText: { 
+        color: '#FFF', 
+        fontWeight: '800', 
+        textTransform: 'uppercase', 
+        fontSize: 12 
     },
     orderCard: {
         backgroundColor: '#fff',

@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { authFetch } from '../../context/AuthContext';
 
 import community from '../../assets/images/racoo.jpeg';
+import { Colors } from '../../constants/colors';
 
 const MessagesScreen = () => {
   const router = useRouter();
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   newMessageBtn: {
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.light.success,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 14,
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
 
   messageSheet: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Lighter grey background
+    backgroundColor: '#f3f6f4', // Lighter grey background
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     marginTop: 10,

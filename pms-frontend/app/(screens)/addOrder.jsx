@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import UserNavbar from '../../components/UserNavbar';
+import { authFetch } from '../../context/AuthContext';
+import { useRouter } from 'expo-router';
 
 let DateTimePicker = null;
 if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -11,13 +13,47 @@ if (Platform.OS === 'ios' || Platform.OS === 'android') {
 }
 
 const AddOrder = () => {
-  const [breedType, setBreedType] = useState('Broilers'); // Fixed initial value to match options
+  const router = useRouter();
+
+  const [breeds, setBreeds] = useState([]);
+  const [loadingBreeds, setLoadingBreeds] = useState(true);
+  const [breedsError, setBreedsError] = useState('');
+
+  const [breedType, setBreedType] = useState('');
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
-  const [basis, setBasis] = useState('Per Chicken'); // Added initial value
+  const [basis, setBasis] = useState('per chick');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadBreeds = async () => {
+    try {
+      setBreedsError('');
+      setLoadingBreeds(true);
+      const data = await authFetch('/breeds', { method: 'GET' });
+      const list = Array.isArray(data?.breeds) ? data.breeds : [];
+      setBreeds(list);
+      if (!breedType && list.length > 0) {
+        setBreedType(list[0]._id);
+      }
+    } catch (e) {
+      setBreedsError(e?.message || 'Failed to load breeds');
+    } finally {
+      setLoadingBreeds(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBreeds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectedBreedName = useMemo(() => {
+    const found = breeds.find((b) => b?._id === breedType);
+    return found?.breedName || '';
+  }, [breeds, breedType]);
 
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -27,16 +63,54 @@ const AddOrder = () => {
   };
 
   const handleRegister = () => {
-    // TODO: Implement registration logic (e.g., API call)
-    console.log({
-      breedType,
-      name,
-      date,
-      quantity,
-      price,
-      basis,
-    });
-    // Optionally navigate back or show success message
+    // Deprecated by submitOrder
+  };
+
+  const submitOrder = async () => {
+    if (!name.trim()) {
+      Alert.alert('Missing name', 'Please enter a customer name.');
+      return;
+    }
+    if (!breedType) {
+      Alert.alert('Missing breed', 'Please select a breed type.');
+      return;
+    }
+    if (!basis) {
+      Alert.alert('Missing basis', 'Please select basis.');
+      return;
+    }
+    if (!quantity || Number.isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      Alert.alert('Invalid quantity', 'Quantity must be a positive number.');
+      return;
+    }
+    if (!price || Number.isNaN(Number(price)) || Number(price) <= 0) {
+      Alert.alert('Invalid price', 'Price must be a positive number.');
+      return;
+    }
+    if (!date) {
+      Alert.alert('Missing delivery date', 'Please select a delivery date.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await authFetch('/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          breedType,
+          basis,
+          quantity: Number(quantity),
+          price: Number(price),
+          deliveryDate: date,
+        }),
+      });
+      router.replace('/(tabs)/orders');
+    } catch (e) {
+      Alert.alert('Failed to create order', e?.message || 'Please try again');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -62,18 +136,29 @@ const AddOrder = () => {
           <View style={styles.field}>
             <Text style={styles.label}>Breed Type</Text>
             <View style={styles.underlineContainer}>
-              <Picker
-                selectedValue={breedType}
-                onValueChange={(itemValue) => setBreedType(itemValue)}
-                style={styles.picker}
-                mode="dialog"
-              >
-                <Picker.Item label="Broilers" value="Broilers" />
-                <Picker.Item label="Kuroilers" value="Kuroilers" />
-                <Picker.Item label="Layers" value="Layers" />
-              </Picker>
+              {loadingBreeds ? (
+                <View style={{ paddingVertical: 10 }}>
+                  <ActivityIndicator size="small" color={Colors.light.success} />
+                </View>
+              ) : breedsError ? (
+                <TouchableOpacity activeOpacity={0.8} onPress={loadBreeds} style={{ paddingVertical: 8 }}>
+                  <Text style={{ color: '#dc2626', fontWeight: '700' }}>{breedsError} (Tap to retry)</Text>
+                </TouchableOpacity>
+              ) : (
+                <Picker
+                  selectedValue={breedType}
+                  onValueChange={(itemValue) => setBreedType(itemValue)}
+                  style={styles.picker}
+                  mode="dialog"
+                >
+                  {breeds.map((b) => (
+                    <Picker.Item key={b._id} label={b.breedName} value={b._id} />
+                  ))}
+                </Picker>
+              )}
             </View>
           </View>
+
           {/* Basis */}
           <View style={styles.field}>
             <Text style={styles.label}>Basis</Text>
@@ -84,8 +169,8 @@ const AddOrder = () => {
                 style={styles.picker}
                 mode="dialog"
               >
-                <Picker.Item label="Per Chicken" value="Per Chicken" />
-                <Picker.Item label="Per Kg" value="Per Kg" />
+                <Picker.Item label="Per Chick" value="per chick" />
+                <Picker.Item label="Per Kg" value="per kg" />
               </Picker>
             </View>
           </View>
@@ -109,12 +194,13 @@ const AddOrder = () => {
             <TextInput
               style={styles.underlineInput}
               value={price}
-              onChangeText={setPrice} // Fixed this (was {price})
+              onChangeText={setPrice}
               keyboardType="numeric"
               placeholderTextColor="#aaa"
               underlineColorAndroid="transparent" // Remove Android focus underline
             />
           </View>
+
           {/* Date */}
           <View style={styles.field}>
             <Text style={styles.label}>Date</Text>
@@ -152,8 +238,16 @@ const AddOrder = () => {
           </View>
 
           {/* Register Button */}
-          <TouchableOpacity style={styles.registerButton} onPress={handleRegister} >
-            <Text style={styles.buttonText}>Register</Text>
+          <TouchableOpacity
+            style={[styles.registerButton, submitting && { opacity: 0.8 }]}
+            onPress={submitOrder}
+            disabled={submitting || loadingBreeds || !!breedsError}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Register</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

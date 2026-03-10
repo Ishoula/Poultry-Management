@@ -7,11 +7,15 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
+import { useRouter } from 'expo-router';
+import { authFetch } from '../../context/AuthContext';
 
 const categories = [
   { name: 'Feeding', icon: 'restaurant' },     // orange-amber for food
@@ -27,6 +31,7 @@ const priorities = [
 ];
 
 const NewTaskScreen = () => {
+  const router = useRouter();
   const [taskName, setTaskName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categories[0].name);
   const [date, setDate] = useState(new Date());
@@ -35,6 +40,7 @@ const NewTaskScreen = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('Medium');
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false); // Close on Android immediately
@@ -51,47 +57,60 @@ const NewTaskScreen = () => {
   };
 
   const formatDate = (d) => {
-    return d.toLocaleDateString('en-US', {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const formatTime = (t) => {
-    return t.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const hh = String(t.getHours()).padStart(2, '0');
+    const mm = String(t.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
   };
 
-  const handleSave = () => {
+  const toApiCategory = (label) => {
+    const v = String(label || '').trim().toLowerCase();
+    if (v === 'feeding') return 'feeding';
+    if (v === 'cleaning') return 'cleaning';
+    if (v === 'health') return 'health check';
+    if (v === 'environment') return 'other';
+    return 'other';
+  };
+
+  const handleSave = async () => {
     if (!taskName.trim()) {
-      // You can add alert / toast here
-      console.warn('Task name is required');
+      Alert.alert('Missing task name', 'Please enter a task name.');
       return;
     }
 
-    const task = {
-      taskName,
-      category: selectedCategory,
+    const payload = {
+      taskName: taskName.trim(),
+      category: toApiCategory(selectedCategory),
       date: formatDate(date),
       time: formatTime(time),
-      priority: selectedPriority,
-      notes,
+      priority: String(selectedPriority || '').trim().toLowerCase(),
+      notes: String(notes || ''),
     };
 
-    console.log('New Task:', task);
- 
+    try {
+      setSubmitting(true);
+      await authFetch('/tasks', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      router.replace('/(tabs)/tasks');
+    } catch (e) {
+      Alert.alert('Failed to save task', e?.message || 'Please try again');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
   <>
     <UserNavbar />
     <ScrollView style={styles.container}>
-      
-
       <Text style={styles.title}>New Task</Text>
 
       <TextInput
@@ -199,8 +218,12 @@ const NewTaskScreen = () => {
         numberOfLines={4}
       />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.buttonText}>Save Task</Text>
+      <TouchableOpacity style={[styles.saveButton, submitting && { opacity: 0.8 }]} onPress={handleSave} disabled={submitting}>
+        {submitting ? (
+          <ActivityIndicator size="small" color="#FFF" />
+        ) : (
+          <Text style={styles.buttonText}>Save Task</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
     </>
