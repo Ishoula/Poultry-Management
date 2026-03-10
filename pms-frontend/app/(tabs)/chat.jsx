@@ -111,13 +111,22 @@ const MessagesScreen = () => {
       <View style={styles.headerArea}>
         <View style={styles.titleRow}>
           <Text style={styles.pageTitle}>Messages</Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.newMessageBtn}
-            onPress={() => router.push('/newChat')}
-          >
-            <Text style={styles.newMessageText}>New</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.newMessageBtn}
+              onPress={() => router.push('/newChat')}
+            >
+              <Text style={styles.newMessageText}>New</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.groupBtn}
+              onPress={() => router.push('/newGroupChat')}
+            >
+              <Text style={styles.groupText}>Group</Text>
+            </TouchableOpacity>
+          </View>
           {/* <TouchableOpacity style={styles.searchIcon}>
             <Text>🔍</Text>
           </TouchableOpacity> */}
@@ -171,6 +180,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: '#111827',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   newMessageBtn: {
     backgroundColor: '#10B981',
     paddingHorizontal: 14,
@@ -178,6 +192,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   newMessageText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  groupBtn: {
+    backgroundColor: '#111827',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  groupText: {
     color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 12,
