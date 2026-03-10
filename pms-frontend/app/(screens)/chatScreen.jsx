@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,47 +9,107 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { authFetch } from '../../context/AuthContext';
 
 import community from '../../assets/images/racoo.jpeg';
-import shoula from '../../assets/images/shoula.jpg';
-import agdede from '../../assets/images/racoo.jpeg';
-import pasca from '../../assets/images/loveOfMyLife.jpg';
-import sema from '../../assets/images/IMG-20250506-WA0007.jpg';
-
-const chatMessages = [
-  { id: '1', sender: 'Shoula', avatar: shoula, message: 'Does any of you have eggs available for bulk purchase today?', time: '10:00 AM', isMe: false },
-  { id: '2', sender: 'Agdede', avatar: agdede, message: 'No. Just sold my batch yesterday.', time: '10:05 AM', isMe: false },
-  { id: '3', sender: 'Pasca', avatar: pasca, message: 'Me neither, still waiting for production to pick up.', time: '10:07 AM', isMe: false },
-  { id: '4', sender: 'Sema', avatar: sema, message: "I have a few crates left if you're interested.", time: '10:15 AM', isMe: false },
-];
 
 const ChatScreen = () => {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState(chatMessages);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
   const flatListRef = useRef(null);
 
   const router = useRouter();
-  const { name } = useLocalSearchParams();
+  const { name, chatId, me } = useLocalSearchParams();
 
-  const sendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: Date.now().toString(),
-        sender: 'You',
-        message: message.trim(),
-        time: 'Just now',
-        isMe: true,
-      };
-      setMessages([...messages, newMessage]);
+  const myId = useMemo(() => (typeof me === 'string' ? me : null), [me]);
+
+  const loadMessages = React.useCallback(async () => {
+    if (!chatId || typeof chatId !== 'string') return;
+    try {
+      setError('');
+      setLoading(true);
+      const data = await authFetch(`/chats/${chatId}/messages?limit=50`, { method: 'GET' });
+      setMessages(Array.isArray(data?.messages) ? data.messages : []);
+    } catch (e) {
+      setError(e?.message || 'Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [chatId]);
+
+  const markRead = React.useCallback(async () => {
+    if (!chatId || typeof chatId !== 'string') return;
+    try {
+      await authFetch(`/chats/${chatId}/read`, { method: 'PUT' });
+    } catch {
+      // ignore
+    }
+  }, [chatId]);
+
+  useEffect(() => {
+    loadMessages();
+  }, [loadMessages]);
+
+  useEffect(() => {
+    markRead();
+  }, [markRead]);
+
+  const sendMessage = async () => {
+    if (!chatId || typeof chatId !== 'string') return;
+    const content = message.trim();
+    if (!content || sending) return;
+
+    try {
+      setSending(true);
+      const res = await authFetch(`/chats/${chatId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+      const created = res?.message;
+      if (created) {
+        setMessages((prev) => [...prev, created]);
+      } else {
+        await loadMessages();
+      }
       setMessage('');
-      // Scroll to bottom after state update
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Failed to send message');
+    } finally {
+      setSending(false);
     }
   };
+
+  const uiMessages = useMemo(() => {
+    return messages.map((m) => {
+      const ts = m?.createdAt ? new Date(m.createdAt) : null;
+      const time = ts && !Number.isNaN(ts.getTime())
+        ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+      const isMe = myId && (m?.sender?._id ? m.sender._id === myId : m?.sender === myId);
+      const senderName = m?.sender?.username || (isMe ? 'You' : 'User');
+      const avatar = m?.sender?.photo ? { uri: m.sender.photo } : community;
+
+      return {
+        id: m?._id || String(Math.random()),
+        sender: senderName,
+        avatar,
+        message: m?.content || '',
+        time,
+        isMe: !!isMe,
+      };
+    });
+  }, [messages, myId]);
 
   const renderMessage = ({ item }) => (
     <View style={[styles.messageContainer, item.isMe ? styles.myMessageContainer : styles.theirMessageContainer]}>
@@ -89,14 +149,27 @@ const ChatScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.chatContent}
-        ListHeaderComponent={<Text style={styles.timeHeader}>TODAY</Text>}
-      />
+      {loading ? (
+        <View style={{ paddingTop: 30 }}>
+          <ActivityIndicator size="small" color={Colors.light.success} />
+        </View>
+      ) : error ? (
+        <View style={{ padding: 16 }}>
+          <Text style={{ color: '#dc2626' }}>{error}</Text>
+          <TouchableOpacity onPress={loadMessages} style={{ marginTop: 10 }}>
+            <Text style={{ color: Colors.light.success, fontWeight: '700' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={uiMessages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.chatContent}
+          ListHeaderComponent={<Text style={styles.timeHeader}>TODAY</Text>}
+        />
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -119,7 +192,7 @@ const ChatScreen = () => {
           <TouchableOpacity 
             style={[styles.sendButton, !message.trim() && styles.sendDisabled]} 
             onPress={sendMessage}
-            disabled={!message.trim()}
+            disabled={!message.trim() || sending}
           >
             <MaterialCommunityIcons name="send" size={22} color="white" />
           </TouchableOpacity>

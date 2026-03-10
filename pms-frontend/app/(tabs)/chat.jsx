@@ -1,30 +1,75 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Platform, ActivityIndicator } from 'react-native';
 import UserNavbar from '../../components/UserNavbar';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { authFetch } from '../../context/AuthContext';
 
-import shoula from '../../assets/images/shoula.jpg';
-import agdede from '../../assets/images/racoo.jpeg';
-import pasca from '../../assets/images/loveOfMyLife.jpg';
-import sema from '../../assets/images/IMG-20250506-WA0007.jpg';
 import community from '../../assets/images/racoo.jpeg';
-
-const recentMessages = [
-  { id: '1', name: 'Shoula', avatar: shoula, lastMessage: 'How are the new chicks ad...', time: '2m ago', unreadStatus: true, online: true },
-  { id: '2', name: 'Agdede', avatar: agdede, lastMessage: "You: I'm coming to visit ur chicks", time: '10m ago', unreadStatus: false, online: true },
-  { id: '3', name: 'Pasca', avatar: pasca, lastMessage: 'You: Do you have eggs?', time: '30m ago', unreadStatus: false, online: false },
-  { id: '4', name: 'Sema', avatar: sema, lastMessage: 'When are you vaccinating...', time: '18:00', unreadStatus: false, online: false },
-  { id: '5', name: 'Musanze Community', avatar: community, lastMessage: 'Great tips on the brooding!', time: '20:00', unreadStatus: false, online: true },
-  { id: '6', name: 'Poultry Experts', avatar: community, lastMessage: 'The market price is rising...', time: 'Yesterday', unreadStatus: false, online: false },
-];
 
 const MessagesScreen = () => {
   const router = useRouter();
 
+  const [me, setMe] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadChats = React.useCallback(async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const data = await authFetch('/chats', { method: 'GET' });
+      setMe(data?.me || null);
+      setChats(Array.isArray(data?.chats) ? data.chats : []);
+    } catch (e) {
+      setError(e?.message || 'Failed to load chats');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadChats();
+    }, [loadChats])
+  );
+
+  const uiChats = useMemo(() => {
+    const myId = typeof me === 'string' ? me : (me?._id || null);
+    return chats.map((c) => {
+      const members = Array.isArray(c.members) ? c.members : [];
+      const other = myId ? members.find((m) => m?._id && m._id !== myId) : members[0];
+      const displayName = c.isGroup ? (c.name || 'Group') : (other?.username || 'Chat');
+      const photo = other?.photo;
+      const avatarSource = photo ? { uri: photo } : community;
+      const online = !!other?.isOnline;
+      const lastMessageText = c?.lastMessage?.content ? c.lastMessage.content : 'No messages yet';
+      const lastTime = c?.lastMessage?.createdAt || c?.updatedAt;
+      const time = lastTime ? new Date(lastTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const unreadCount = typeof c.unreadCount === 'number' ? c.unreadCount : 0;
+
+      return {
+        id: c._id,
+        name: displayName,
+        avatar: avatarSource,
+        lastMessage: lastMessageText,
+        time,
+        unreadStatus: unreadCount > 0,
+        online,
+        unreadCount,
+      };
+    });
+  }, [chats, me]);
+
   const openChat = (item) => {
     router.push({
       pathname: '/chatScreen',
-      params: { chatId: item.id, name: item.name },
+      params: { chatId: item.id, name: item.name, me: typeof me === 'string' ? me : me?._id },
     });
   };
 
@@ -43,7 +88,7 @@ const MessagesScreen = () => {
         <Image source={item.avatar} style={styles.listAvatar} />
         {item.online && <View style={styles.onlineDot} />}
       </View>
-      
+
       <View style={styles.messageContent}>
         <View style={styles.messageHeader}>
           <Text style={[styles.name, item.unreadStatus && styles.unreadText]}>{item.name}</Text>
@@ -62,17 +107,24 @@ const MessagesScreen = () => {
   return (
     <View style={styles.container}>
       <UserNavbar title="Smart Poultry" showBell={true} />
-      
+
       <View style={styles.headerArea}>
         <View style={styles.titleRow}>
-           <Text style={styles.pageTitle}>Messages</Text>
-           {/* <TouchableOpacity style={styles.searchIcon}>
-              <Text>🔍</Text> 
-           </TouchableOpacity> */}
+          <Text style={styles.pageTitle}>Messages</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.newMessageBtn}
+            onPress={() => router.push('/newChat')}
+          >
+            <Text style={styles.newMessageText}>New</Text>
+          </TouchableOpacity>
+          {/* <TouchableOpacity style={styles.searchIcon}>
+            <Text>🔍</Text>
+          </TouchableOpacity> */}
         </View>
         <FlatList
           horizontal
-          data={recentMessages.filter(m => m.id !== '5' && m.id !== '6')} 
+          data={uiChats.slice(0, 10)}
           renderItem={renderAvatarItem}
           keyExtractor={(item) => `top-${item.id}`}
           showsHorizontalScrollIndicator={false}
@@ -85,13 +137,24 @@ const MessagesScreen = () => {
           <Text style={styles.sectionTitle}>RECENT CONVERSATIONS</Text>
           <TouchableOpacity><Text style={styles.markRead}>Mark all as read</Text></TouchableOpacity>
         </View>
-        
+
         <FlatList
-          data={recentMessages}
+          data={uiChats}
           renderItem={renderMessageItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }}
+          ListEmptyComponent={
+            loading ? (
+              <View style={{ paddingVertical: 30 }}>
+                <ActivityIndicator size="small" color="#10B981" />
+              </View>
+            ) : error ? (
+              <Text style={{ color: '#dc2626', paddingVertical: 20 }}>{error}</Text>
+            ) : (
+              <Text style={{ color: '#6B7280', paddingVertical: 20 }}>No chats yet</Text>
+            )
+          }
         />
       </View>
     </View>
@@ -107,6 +170,19 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginVertical: 10,
     color: '#111827',
+  },
+  newMessageBtn: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  newMessageText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   topAvatarsContent: { paddingHorizontal: 20, paddingVertical: 10 },
   avatarWrapper: { alignItems: 'center', marginRight: 20 },

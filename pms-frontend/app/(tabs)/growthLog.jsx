@@ -1,26 +1,34 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { authFetch } from '../../context/AuthContext';
 
+// 1. Move configuration constants outside the component to prevent re-definitions
+const LOG_CONFIG = {
+    death: { icon: 'heart-broken', iconColor: '#EF4444' },
+    feed: { icon: 'leaf', iconColor: '#F59E0B' },
+    weight: { icon: 'scale', iconColor: '#3B82F6' },
+    vaccine: { icon: 'needle', iconColor: '#10B981' },
+    default: { icon: 'clipboard-text', iconColor: '#6B7280' }
+};
+
 const GrowthLogScreen = () => {
     const router = useRouter();
-
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const loadLogs = React.useCallback(async () => {
+    // 2. Optimized data fetching
+    const loadLogs = useCallback(async () => {
         try {
             setError('');
             setLoading(true);
             const data = await authFetch('/growthLog', { method: 'GET' });
-            const list = Array.isArray(data?.logs) ? data.logs : [];
-            setLogs(list);
+            setLogs(Array.isArray(data?.logs) ? data.logs : []);
         } catch (e) {
             setError(e?.message || 'Failed to load logs');
         } finally {
@@ -28,35 +36,31 @@ const GrowthLogScreen = () => {
         }
     }, []);
 
-    useEffect(() => {
-        loadLogs();
-    }, [loadLogs]);
-
+    // 3. useFocusEffect is enough to handle initial load and refresh on return
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
             loadLogs();
         }, [loadLogs])
     );
 
+    // 4. Memoize the UI data transformation
     const uiLogs = useMemo(() => {
-        const iconByType = {
-            death: { icon: 'heart-broken', iconColor: '#EF4444' },
-            feed: { icon: 'grass', iconColor: '#F59E0B' },
-            weight: { icon: 'scale', iconColor: '#3B82F6' },
-            vaccine: { icon: 'needle', iconColor: '#10B981' },
-        };
         return logs.map((l) => {
             const logDate = l.date ? new Date(l.date) : null;
-            const date = logDate && !Number.isNaN(logDate.getTime()) ? logDate.toLocaleDateString() : '-';
-            const iconMeta = iconByType[l.type] || { icon: 'clipboard-text', iconColor: '#6B7280' };
+            const formattedDate = logDate && !Number.isNaN(logDate.getTime()) 
+                ? logDate.toLocaleDateString() 
+                : 'N/A';
+            
+            const config = LOG_CONFIG[l.type] || LOG_CONFIG.default;
             const unitLabel = l.unit === 'count' ? 'birds' : l.unit;
+
             return {
                 id: l._id,
-                title: (l.type || 'log').toString().toUpperCase(),
+                title: (l.type || 'log').toUpperCase(),
                 value: `${l.value} ${unitLabel}`,
-                date,
-                note: l.notes || '',
-                ...iconMeta,
+                date: formattedDate,
+                note: l.notes || 'No notes added',
+                ...config,
             };
         });
     }, [logs]);
@@ -74,17 +78,19 @@ const GrowthLogScreen = () => {
                         <Text style={styles.logMetaValue}>{item.value}</Text>
                     </View>
                 </View>
-                <TouchableOpacity>
-                    <Icon name="edit" size={18} color={Colors.light.icon} />
+                <TouchableOpacity onPress={() => {/* Handle Edit */}}>
+                    <Icon name="pencil" size={20} color={Colors.light.icon} />
                 </TouchableOpacity>
             </View>
+
             <View style={styles.metaRow}>
                 <View style={styles.metaBlock}>
                     <Text style={styles.metaLabel}>Date</Text>
                     <Text style={styles.metaValue}>{item.date}</Text>
                 </View>
             </View>
-            <Text style={styles.noteLabel}>Note:</Text>
+
+            <Text style={styles.noteLabel}>Note</Text>
             <Text style={styles.noteText}>{item.note}</Text>
         </View>
     );
@@ -92,23 +98,34 @@ const GrowthLogScreen = () => {
     return (
         <View style={styles.safeArea}>
             <UserNavbar />
+            
             <FlatList
                 data={uiLogs}
                 renderItem={renderLog}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                    !loading && (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.sectionMeta}>No records found.</Text>
+                        </View>
+                    )
+                }
                 ListHeaderComponent={
                     <View style={styles.pageHeader}>
                         <View style={styles.headerRow}>
-                            <TouchableOpacity style={styles.headerIconButton}>
-                                <Icon name="arrow-back" size={20} color={Colors.light.text} />
+                            <TouchableOpacity 
+                                style={styles.headerIconButton} 
+                                onPress={() => router.back()}
+                            >
+                                <Icon name="arrow-left" size={20} color={Colors.light.text} />
                             </TouchableOpacity>
                             <Text style={styles.title}>Growth Log</Text>
                             <View style={{ width: 40 }} />
                         </View>
 
-                        {loading ? <Text style={styles.sectionMeta}>Loading...</Text> : null}
+                        {loading && <ActivityIndicator color={Colors.light.success} />}
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                         <View style={styles.sectionHeader}>
@@ -139,7 +156,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: 20,
-        paddingBottom: 32,
+        paddingBottom: 100, // Extra space for FAB
     },
     pageHeader: {
         paddingVertical: 16,
@@ -157,33 +174,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#0F172A',
-        shadowOpacity: 0.08,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 8,
         elevation: 3,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
     },
     title: {
         fontSize: 20,
         fontWeight: '700',
         color: Colors.light.text,
-    },
-    fab: {
-        position: 'absolute',
-        bottom: 30,
-        right: 20,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: Colors.light.success,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 6,
-        marginBottom: 40,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -201,20 +201,16 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
         letterSpacing: 0.6,
     },
-    errorText: {
-        fontSize: 14,
-        color: '#dc2626',
-    },
     logCard: {
         backgroundColor: '#ffffff',
         borderRadius: 20,
         padding: 18,
-        marginBottom: 50,
+        marginBottom: 16, // Reduced from 50 for better list density
+        elevation: 4,
         shadowColor: '#0F172A',
         shadowOpacity: 0.06,
         shadowOffset: { width: 0, height: 6 },
         shadowRadius: 12,
-        elevation: 4,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -226,7 +222,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         flex: 1,
-        marginRight: 12,
     },
     iconBadge: {
         width: 46,
@@ -243,12 +238,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: Colors.light.text,
-        marginBottom: 6,
+        marginBottom: 4,
     },
     logMetaLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
-        letterSpacing: 0.6,
         color: '#9CA3AF',
         textTransform: 'uppercase',
     },
@@ -256,114 +250,64 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         color: Colors.light.text,
-        marginTop: 4,
     },
     metaRow: {
         flexDirection: 'row',
-        marginBottom: 30,
-    },
-    metaBlock: {
-        marginRight: 20,
-    },
-    metaLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#9CA3AF',
-        textTransform: 'uppercase',
-        marginBottom: 6,
-    },
-    metaValue: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: Colors.light.text,
-    },
-    noteLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#9CA3AF',
-        textTransform: 'uppercase',
-        marginBottom: 6,
-    },
-    noteText: {
-        fontSize: 14,
-        color: '#6B7280',
-        lineHeight: 20,
-        shadowOpacity: 0.06,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 12,
-        elevation: 4,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        marginTop: 12,
         marginBottom: 12,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        flex: 1,
-        marginRight: 12,
-    },
-    iconBadge: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-    },
-    titleTextWrap: {
-        flex: 1,
-    },
-    logTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: Colors.light.text,
-        marginBottom: 6,
-    },
-    logMetaLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        letterSpacing: 0.6,
-        color: '#9CA3AF',
-        textTransform: 'uppercase',
-    },
-    logMetaValue: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: Colors.light.text,
-        marginTop: 4,
-    },
-    metaRow: {
-        flexDirection: 'row',
-        marginBottom: 30,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+        paddingTop: 12,
     },
     metaBlock: {
         marginRight: 20,
     },
     metaLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         color: '#9CA3AF',
         textTransform: 'uppercase',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     metaValue: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
         color: Colors.light.text,
     },
     noteLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         color: '#9CA3AF',
         textTransform: 'uppercase',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     noteText: {
         fontSize: 14,
         color: '#6B7280',
         lineHeight: 20,
     },
+    fab: {
+        position: 'absolute',
+        bottom: 30,
+        right: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: Colors.light.success,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+    },
+    errorText: {
+        color: '#EF4444',
+        textAlign: 'center',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 40,
+    }
 });
