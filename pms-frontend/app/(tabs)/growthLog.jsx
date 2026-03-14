@@ -301,6 +301,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 6,
+        marginBottom: 40,
     },
     errorText: {
         color: '#EF4444',

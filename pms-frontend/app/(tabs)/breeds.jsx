@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -13,6 +13,7 @@ import { Colors } from '../../constants/colors';
 import UserNavbar from '../../components/UserNavbar';
 import { authFetch } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const BreedsScreen = () => {
   const [breeds, setBreeds] = useState([]);
@@ -20,24 +21,29 @@ const BreedsScreen = () => {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    let mounted = true;
-    const fetchBreeds = async () => {
-      try {
-        setError('');
-        setLoading(true);
-        const data = await authFetch('/breeds', { method: 'GET' });
-        const list = Array.isArray(data?.breeds) ? data.breeds : [];
-        if (mounted) setBreeds(list);
-      } catch (e) {
-        if (mounted) setError(e?.message || 'Failed to load breeds');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    fetchBreeds();
-    return () => { mounted = false; };
+  const fetchBreeds = useCallback(async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const data = await authFetch('/breeds', { method: 'GET' });
+      const list = Array.isArray(data?.breeds) ? data.breeds : [];
+      setBreeds(list);
+    } catch (e) {
+      setError(e?.message || 'Failed to load breeds');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchBreeds();
+  }, [fetchBreeds]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBreeds();
+    }, [fetchBreeds])
+  );
 
   const breedsData = useMemo(() => {
     const palette = ['#4CAF50', '#FF9800', '#2196F3', '#9C27B0', '#F44336'];
@@ -55,7 +61,6 @@ const BreedsScreen = () => {
 
   const renderBreed = ({ item }) => (
     <TouchableOpacity activeOpacity={0.7} style={styles.breedCard}>
-      <div style={{ display: 'none' }}></div>
       <View style={styles.cardTopSection}>
         <View style={[styles.iconCircle, { backgroundColor: `${item.iconColor}15` }]}>
           <Icon name={item.iconName} size={28} color={item.iconColor} />
@@ -96,8 +101,33 @@ const BreedsScreen = () => {
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          !loading && !error ? (
+            <View style={{ paddingTop: 24 }}>
+              <Text style={styles.emptyText}>No breeds yet. Tap the plus button to add one.</Text>
+            </View>
+          ) : null
+        }
         ListHeaderComponent={
           <View style={styles.pageHeader}>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.navCard}
+              onPress={() => router.push('/batch')}
+            >
+              <View style={styles.navCardLeft}>
+                <View style={styles.navCardIcon}>
+                  <Icon name="egg" size={20} color={Colors.light.success} />
+                </View>
+                <View style={styles.navCardText}>
+                  <Text style={styles.navCardTitle}>Batches</Text>
+                  <Text style={styles.navCardSubtitle} numberOfLines={1}>Go to your batches</Text>
+                </View>
+              </View>
+              <Icon name="chevron-right" size={22} color="#94A3B8" />
+            </TouchableOpacity>
+
             <Text style={styles.title}>Poultry Breeds</Text>
             <Text style={styles.subtitle}>Track and manage your specific bird varieties.</Text>
             
@@ -109,7 +139,11 @@ const BreedsScreen = () => {
             </View>
             
             {loading && <ActivityIndicator color={Colors.light.success} style={{marginTop: 20}} />}
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? (
+              <TouchableOpacity activeOpacity={0.8} onPress={fetchBreeds} style={{ marginTop: 12 }}>
+                <Text style={styles.errorText}>{error} (Tap to retry)</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         }
       />
@@ -138,6 +172,50 @@ const styles = StyleSheet.create({
   pageHeader: { 
     paddingTop: 20, 
     marginBottom: 10 
+  },
+  navCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
+  },
+  navCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  navCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: `${Colors.light.success}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  navCardText: {
+    flex: 1,
+  },
+  navCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  navCardSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
   },
   title: { 
     fontSize: 28, 
@@ -237,6 +315,11 @@ const styles = StyleSheet.create({
     fontSize: 13, 
     fontWeight: '700', 
     color: '#334155' 
+  },
+  emptyText: {
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 10,
   },
   errorText: { 
     color: '#EF4444', 

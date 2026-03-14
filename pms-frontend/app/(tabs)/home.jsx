@@ -123,7 +123,7 @@ export default function HomeScreen() {
         </Pressable>
 
         {/* Recent Growth Logs */}
-        <SectionHeader title="Recent Growth Logs" onClear={() => {}} />
+        <SectionHeader title="Recent Growth Logs" onClear={() => router.push('/growthLog')} />
         <View style={styles.logsContainer}>
           {recentLogs.length === 0 ? (
             <View style={styles.emptyCard}><Text style={styles.emptyText}>No recent activity</Text></View>
@@ -142,7 +142,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Quick Actions / Breeds */}
-        <SectionHeader title="Available Breeds" onClear={() => {}} />
+        <SectionHeader title="Available Breeds" onClear={() => router.push('/breeds')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.breedScroll}>
           {breeds.map((breed) => (
             <View key={breed._id} style={styles.breedCard}>

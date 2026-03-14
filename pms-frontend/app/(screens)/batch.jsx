@@ -140,12 +140,11 @@ const Batch = () => {
             />
 
             <TouchableOpacity
-                style={styles.registerButton}
-                onPress={() => router.push('addBatch')}
+                style={styles.fab}
+                onPress={() => router.push('/(screens)/addGrowthLog')}
+                activeOpacity={0.8}
             >
-                <View style={styles.registerIconBadge}>
-                    <Icon name="add" size={18} color={Colors.light.success} />
-                </View>
+                <Icon name="add" size={32} color="#fff" />
             </TouchableOpacity>
         </View>
     );
@@ -307,5 +306,22 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         color: Colors.light.text,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 30,
+        right: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: Colors.light.success,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+        marginBottom: 40,
     },
 });

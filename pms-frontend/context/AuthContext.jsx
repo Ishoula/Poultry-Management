@@ -34,7 +34,7 @@ async function getTokenFromStorage() {
 }
 
 function getApiBaseUrl() {
-  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:9000'
+  return process.env.EXPO_PUBLIC_API_URL || 'http://10.11.74.62:9000'
 }
 
 async function requestJson(path, options = {}) {

@@ -83,15 +83,15 @@ export default function Layout() {
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="batch"
         options={{
           tabBarLabel: ({ focused }) => <TabLabel label="Batches" focused={focused} />,
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="batch-prediction" focused={focused} color={color} size={size} />
+            <TabIcon name="egg-outline" focused={focused} color={color} size={size} />
           ),
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="tasks"
@@ -135,7 +135,7 @@ export default function Layout() {
         options={{
           tabBarLabel: ({ focused }) => <TabLabel label="Breeds" focused={focused} />,
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="egg-outline" focused={focused} color={color} size={size} />
+            <TabIcon name="paw-outline" focused={focused} color={color} size={size} />
           ),
         }}
       />

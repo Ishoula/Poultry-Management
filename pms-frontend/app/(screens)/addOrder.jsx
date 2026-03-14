@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { ScrollView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import UserNavbar from '../../components/UserNavbar';
 import { authFetch } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
@@ -114,144 +113,147 @@ const AddOrder = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <UserNavbar />
+    <>
+      <UserNavbar />
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Add Order</Text>
 
-        <Text style={styles.pageTitle}>Add Order</Text>
+        {/* Name */}
+        <Text style={styles.label}>Name</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g. John Doe"
+          placeholderTextColor="#AAA"
+          underlineColorAndroid="transparent"
+        />
 
-        <View style={styles.formContainer}>
-          {/* Name */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.underlineInput}
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor="#aaa"
-              underlineColorAndroid="transparent" 
-            />
+        {/* Breed Type */}
+        <Text style={styles.label}>Breed Type</Text>
+        {loadingBreeds ? (
+          <View style={styles.inlineLoader}>
+            <ActivityIndicator size="small" color={Colors.light.success} />
           </View>
-          {/* Breed Type Dropdown */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Breed Type</Text>
-            <View style={styles.underlineContainer}>
-              {loadingBreeds ? (
-                <View style={{ paddingVertical: 10 }}>
-                  <ActivityIndicator size="small" color={Colors.light.success} />
-                </View>
-              ) : breedsError ? (
-                <TouchableOpacity activeOpacity={0.8} onPress={loadBreeds} style={{ paddingVertical: 8 }}>
-                  <Text style={{ color: '#dc2626', fontWeight: '700' }}>{breedsError} (Tap to retry)</Text>
-                </TouchableOpacity>
-              ) : (
-                <Picker
-                  selectedValue={breedType}
-                  onValueChange={(itemValue) => setBreedType(itemValue)}
-                  style={styles.picker}
-                  mode="dialog"
-                >
-                  {breeds.map((b) => (
-                    <Picker.Item key={b._id} label={b.breedName} value={b._id} />
-                  ))}
-                </Picker>
-              )}
-            </View>
-          </View>
-
-          {/* Basis */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Basis</Text>
-            <View style={styles.underlineContainer}>
-              <Picker
-                selectedValue={basis}
-                onValueChange={(itemValue) => setBasis(itemValue)}
-                style={styles.picker}
-                mode="dialog"
-              >
-                <Picker.Item label="Per Chick" value="per chick" />
-                <Picker.Item label="Per Kg" value="per kg" />
-              </Picker>
-            </View>
-          </View>
-
-          {/* Quantity */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Quantity</Text>
-            <TextInput
-              style={styles.underlineInput}
-              value={quantity}
-              onChangeText={setQuantity}
-              placeholderTextColor="#aaa"
-              keyboardType="numeric"
-              underlineColorAndroid="transparent" // Remove Android focus underline
-            />
-          </View>
-
-          {/* Price */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Price</Text>
-            <TextInput
-              style={styles.underlineInput}
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="numeric"
-              placeholderTextColor="#aaa"
-              underlineColorAndroid="transparent" // Remove Android focus underline
-            />
-          </View>
-
-          {/* Date */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Date</Text>
-
-            {Platform.OS === 'web' ? (
-              <TextInput
-                style={styles.underlineInput}
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#aaa"
-                type="date"
-                underlineColorAndroid="transparent" // Just in case, but not needed on web
-              />
-            ) : (
-              <>
+        ) : breedsError ? (
+          <TouchableOpacity activeOpacity={0.8} onPress={loadBreeds} style={styles.inlineErrorBtn}>
+            <Text style={styles.inlineErrorText}>{breedsError} (Tap to retry)</Text>
+          </TouchableOpacity>
+        ) : breeds.length === 0 ? (
+          <Text style={styles.emptyText}>No breeds found. Please create breeds first.</Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillRow}
+          >
+            {breeds.map((b) => {
+              const isSelected = b?._id === breedType;
+              return (
                 <TouchableOpacity
-                  style={styles.underlineInput}
-                  onPress={() => setShowDatePicker(true)}
+                  key={b._id}
+                  style={[styles.pill, isSelected && styles.pillActive]}
+                  onPress={() => setBreedType(b._id)}
+                  activeOpacity={0.8}
                 >
-                  <Text style={{ color: date ? Colors.light.text : '#aaa', paddingVertical: 8 }}>
-                    {date || 'Select date'}
+                  <Text style={[styles.pillTitle, isSelected && styles.pillTitleActive]} numberOfLines={1}>
+                    {b?.breedName || 'Unknown'}
                   </Text>
                 </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
-                {showDatePicker && DateTimePicker && (
-                  <DateTimePicker
-                    value={date ? new Date(date) : new Date()}
-                    mode="date"
-                    onChange={onDateChange}
-                  />
-                )}
-              </>
-            )}
-          </View>
-
-          {/* Register Button */}
+        {/* Basis */}
+        <Text style={styles.label}>Basis</Text>
+        <View style={styles.basisRow}>
           <TouchableOpacity
-            style={[styles.registerButton, submitting && { opacity: 0.8 }]}
-            onPress={submitOrder}
-            disabled={submitting || loadingBreeds || !!breedsError}
+            style={[styles.basisPill, basis === 'per chick' && styles.basisPillActive]}
+            onPress={() => setBasis('per chick')}
+            activeOpacity={0.8}
           >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Register</Text>
-            )}
+            <Text style={[styles.basisLabel, basis === 'per chick' && styles.basisLabelActive]}>Per Chick</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.basisPill, basis === 'per kg' && styles.basisPillActive]}
+            onPress={() => setBasis('per kg')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.basisLabel, basis === 'per kg' && styles.basisLabelActive]}>Per Kg</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Quantity */}
+        <Text style={styles.label}>Quantity</Text>
+        <TextInput
+          style={styles.input}
+          value={quantity}
+          onChangeText={setQuantity}
+          placeholder="e.g. 100"
+          placeholderTextColor="#AAA"
+          keyboardType="numeric"
+          underlineColorAndroid="transparent"
+        />
+
+        {/* Price */}
+        <Text style={styles.label}>Price</Text>
+        <TextInput
+          style={styles.input}
+          value={price}
+          onChangeText={setPrice}
+          placeholder="e.g. 200"
+          placeholderTextColor="#AAA"
+          keyboardType="numeric"
+          underlineColorAndroid="transparent"
+        />
+
+        {/* Date */}
+        <Text style={styles.label}>Delivery Date</Text>
+        {Platform.OS === 'web' ? (
+          <TextInput
+            style={styles.input}
+            value={date}
+            onChangeText={setDate}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#AAA"
+            type="date"
+            underlineColorAndroid="transparent"
+          />
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.pickerText, !date && styles.pickerPlaceholder]}>{date || 'Select date'}</Text>
+            </TouchableOpacity>
+
+            {showDatePicker && DateTimePicker && (
+              <DateTimePicker
+                value={date ? new Date(date) : new Date()}
+                mode="date"
+                onChange={onDateChange}
+              />
+            )}
+          </>
+        )}
+
+        {/* Register Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, (submitting || loadingBreeds || !!breedsError) && { opacity: 0.8 }]}
+          onPress={submitOrder}
+          disabled={submitting || loadingBreeds || !!breedsError}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.buttonText}>Register</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </>
   );
 };
 
@@ -260,46 +262,34 @@ export default AddOrder;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background || '#f8f9fa',
+    backgroundColor: '#FFF',
   },
   scrollContent: {
-    flexGrow: 1,
+    padding: 20,
+    paddingBottom: 40,
   },
-  pageTitle: {
-    fontFamily: 'Roboto',
-    fontSize: 24,
-    fontWeight: 'bold',
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
-    marginTop: 16,
-    color: Colors.light.text,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-    color: Colors.light.text,
-  },
-  formContainer: {
-    paddingHorizontal: 20,
-  },
-  field: {
-    marginBottom: 24,
+    marginBottom: 28,
+    color: '#333',
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: Colors.light.text,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#444',
   },
-  underlineInput: {
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#ccc',
-    paddingVertical: 8,
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
     fontSize: 16,
-    color: Colors.light.text,
-    backgroundColor: 'transparent',
+    backgroundColor: '#FAFAFA',
+    color: '#333',
     ...Platform.select({
       web: {
         outlineWidth: 0,
@@ -308,44 +298,114 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  underlineContainer: {
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#ccc',
-    ...Platform.select({
-      web: {
-        outlineWidth: 0,
-        outlineColor: 'transparent',
-        outlineStyle: 'none', // Remove outline for picker container on web
-      },
-    }),
+  emptyText: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginBottom: 20,
   },
-  picker: {
-    height: 48,
-    width: '100%',
-    color: Colors.light.text,
-    fontSize: 16,
-    borderColor: 'none',
-    backgroundColor: 'transparent',
-    ...Platform.select({
-      web: {
-        outlineWidth: 0,
-        outlineColor: 'transparent',
-        outlineStyle: 'none', // Remove outline on focus for picker on web
-        border: 'none', // Ensure no border
-      },
-    }),
+  pillRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingBottom: 4,
+    marginBottom: 20,
   },
-  registerButton: {
-    backgroundColor: Colors.light.success || 'green',
-    paddingVertical: 16,
-    borderRadius: 8,
+  pill: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    minWidth: 120,
+  },
+  pillActive: {
+    backgroundColor: `${Colors.light.success}10`,
+    borderColor: Colors.light.success,
+  },
+  pillTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  pillTitleActive: {
+    color: Colors.light.success,
+  },
+  pillMeta: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  basisRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  basisPill: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 32,
-    marginBottom:20,
+  },
+  basisPillActive: {
+    borderColor: Colors.light.success,
+    backgroundColor: `${Colors.light.success}10`,
+  },
+  basisLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  basisLabelActive: {
+    color: Colors.light.success,
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#FAFAFA',
+    marginBottom: 20,
+  },
+  pickerText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  pickerPlaceholder: {
+    color: '#AAA',
+  },
+  inlineLoader: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  inlineErrorBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  inlineErrorText: {
+    color: '#dc2626',
+    fontWeight: '700',
+  },
+  saveButton: {
+    backgroundColor: Colors.light.success || '#4CAF50',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#FFF',
+    fontSize: 17,
     fontWeight: 'bold',
   },
 });

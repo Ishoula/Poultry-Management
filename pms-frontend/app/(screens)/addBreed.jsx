@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
+import { authFetch } from '../../context/AuthContext';
+import { useRouter } from 'expo-router';
 
 const purposeOptions = [
     { id: 'meat', label: 'Meat', icon: 'restaurant' },
@@ -11,24 +13,54 @@ const purposeOptions = [
 ];
 
 const AddBreed = () => {
+    const router = useRouter();
     const [breedName, setBreedName] = useState('');
     const [selectedPurpose, setSelectedPurpose] = useState('meat');
     const [description, setDescription] = useState('');
     const [growthPeriod, setGrowthPeriod] = useState('');
     const [averageWeight, setAverageWeight] = useState('');
     const [focusedField, setFocusedField] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleRegister = () => {
-        // TODO: Implement registration logic (e.g., API call)
-        console.log({
-            breedName,
-            selectedPurpose,
-            description,
-            growthPeriod,
-            averageWeight,
-        });
+    const handleRegister = async () => {
+        console.log('[AddBreed] handleRegister called');
+        if (submitting) return;
 
-        // Optionally navigate back or show success message
+        if (!breedName.trim()) {
+            Alert.alert('Missing breed name', 'Please enter a breed name.');
+            return;
+        }
+
+        const growth = Number(growthPeriod);
+        if (!growthPeriod || Number.isNaN(growth) || !Number.isFinite(growth) || growth < 1) {
+            Alert.alert('Invalid growth period', 'Growth period must be a number (min 1).');
+            return;
+        }
+
+        const weight = Number(averageWeight);
+        if (!averageWeight || Number.isNaN(weight) || !Number.isFinite(weight) || weight < 0.1) {
+            Alert.alert('Invalid average weight', 'Average weight must be a number (min 0.1).');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            await authFetch('/breeds', {
+                method: 'POST',
+                body: JSON.stringify({
+                    breedName: breedName.trim(),
+                    description: String(description || ''),
+                    growthPeriod: Math.trunc(growth),
+                    averageWeight: weight,
+                }),
+            });
+            router.replace('/(tabs)/breeds');
+        } catch (e) {
+            console.log("Error",e)
+            Alert.alert('Failed to save breed', e?.message || 'Please try again');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -37,7 +69,7 @@ const AddBreed = () => {
                 <UserNavbar />
                 <View style={styles.screenPadding}>
                     <View style={styles.topBar}>
-                        <TouchableOpacity style={styles.navIconButton}>
+                        <TouchableOpacity style={styles.navIconButton} onPress={() => router.back()}>
                             <Icon name="arrow-back" size={20} color={Colors.light.text} />
                         </TouchableOpacity>
                         <Text style={styles.topBarTitle}>Register Breed</Text>
@@ -119,9 +151,10 @@ const AddBreed = () => {
                                         style={styles.textInput}
                                         value={growthPeriod}
                                         onChangeText={setGrowthPeriod}
-                                        placeholder="e.g., 1.5 mo"
+                                        placeholder="e.g., 45"
                                         placeholderTextColor="#9CA3AF"
                                         underlineColorAndroid="transparent"
+                                        keyboardType="numeric"
                                         onFocus={() => setFocusedField('growthPeriod')}
                                         onBlur={() => setFocusedField(null)}
                                     />
@@ -135,9 +168,10 @@ const AddBreed = () => {
                                         style={styles.textInput}
                                         value={averageWeight}
                                         onChangeText={setAverageWeight}
-                                        placeholder="e.g., 60kg"
+                                        placeholder="e.g., 2.5"
                                         placeholderTextColor="#9CA3AF"
                                         underlineColorAndroid="transparent"
+                                        keyboardType="numeric"
                                         onFocus={() => setFocusedField('averageWeight')}
                                         onBlur={() => setFocusedField(null)}
                                     />
@@ -145,9 +179,28 @@ const AddBreed = () => {
                             </View>
                         </View>
 
-                        <TouchableOpacity style={styles.saveButton} onPress={handleRegister}>
-                            <Icon name="check" size={18} color="#ffffff" style={styles.saveIcon} />
-                            <Text style={styles.saveButtonText}>Save Breed</Text>
+                        <TouchableOpacity
+                            style={[styles.saveButton, submitting && { opacity: 0.85 }]}
+                            onPress={() => {
+                                console.log('[AddBreed] Save button pressed');
+                                if (Platform.OS === 'web') {
+                                    window.alert('Save Breed pressed');
+                                } else {
+                                    Alert.alert('Debug', 'Save Breed pressed');
+                                }
+                                handleRegister();
+                            }}
+                            onPressIn={() => console.log('[AddBreed] Save button pressIn')}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <ActivityIndicator size="small" color="#ffffff" />
+                            ) : (
+                                <>
+                                    <Icon name="check" size={18} color="#ffffff" style={styles.saveIcon} />
+                                    <Text style={styles.saveButtonText}>Save Breed</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
