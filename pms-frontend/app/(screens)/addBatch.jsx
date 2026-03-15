@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
 import { authFetch } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
+
+let DateTimePicker = null;
+if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    DateTimePicker = require('@react-native-community/datetimepicker').default;
+}
 
 const AddBatch = () => {
     const router = useRouter();
@@ -13,6 +18,7 @@ const AddBatch = () => {
     const [selectedBreedId, setSelectedBreedId] = useState(null);
     const [totalBirds, setTotalBirds] = useState('');
     const [arrivalDate, setArrivalDate] = useState('');
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [focusedField, setFocusedField] = useState(null);
 
@@ -23,6 +29,13 @@ const AddBatch = () => {
 
     // Submission state
     const [submitting, setSubmitting] = useState(false);
+
+    const onDateChange = (event, selectedDate) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            setArrivalDate(selectedDate.toISOString().split('T')[0]);
+        }
+    };
 
     // Fetch breeds on mount
     useEffect(() => {
@@ -63,7 +76,7 @@ const AddBatch = () => {
             Alert.alert('Validation Error', 'Please enter an arrival date.');
             return;
         }
-        const parsedDate = new Date(arrivalDate.trim());
+        const parsedDate = new Date(`${arrivalDate.trim()}T00:00:00`);
         if (isNaN(parsedDate.getTime())) {
             Alert.alert('Validation Error', 'Invalid date format. Please use YYYY-MM-DD.');
             return;
@@ -80,7 +93,7 @@ const AddBatch = () => {
                     status: isActive ? 'active' : 'inactive',
                 }),
             });
-            router.replace('/(tabs)/batch');
+            router.replace('/batch');
         } catch (e) {
             Alert.alert('Error', e?.message || 'Failed to create batch. Please try again.');
         } finally {
@@ -166,19 +179,41 @@ const AddBatch = () => {
                             <View style={[styles.inputShell, styles.inputShellBetween, focusedField === 'arrivalDate' && styles.inputShellFocused]}>
                                 <View style={styles.inlineIconText}>
                                     <Icon name="event" size={18} color={Colors.light.icon} style={styles.inputIcon} />
-                                    <TextInput
-                                        style={styles.textInput}
-                                        value={arrivalDate}
-                                        onChangeText={setArrivalDate}
-                                        placeholder="YYYY-MM-DD"
-                                        placeholderTextColor="#9CA3AF"
-                                        underlineColorAndroid="transparent"
-                                        onFocus={() => setFocusedField('arrivalDate')}
-                                        onBlur={() => setFocusedField(null)}
-                                    />
+                                    {Platform.OS === 'web' ? (
+                                        <TextInput
+                                            style={styles.textInput}
+                                            value={arrivalDate}
+                                            onChangeText={setArrivalDate}
+                                            placeholder="YYYY-MM-DD"
+                                            placeholderTextColor="#9CA3AF"
+                                            underlineColorAndroid="transparent"
+                                            onFocus={() => setFocusedField('arrivalDate')}
+                                            onBlur={() => setFocusedField(null)}
+                                            type="date"
+                                        />
+                                    ) : (
+                                        <TouchableOpacity
+                                            activeOpacity={0.8}
+                                            style={{ flex: 1 }}
+                                            onPress={() => setShowDatePicker(true)}
+                                        >
+                                            <Text style={[styles.textInput, { paddingVertical: 0 }, !arrivalDate && { color: '#9CA3AF' }]}>
+                                                {arrivalDate || 'Select date'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
-                                <Icon name="calendar-today" size={18} color={Colors.light.icon} />
+                                <TouchableOpacity activeOpacity={0.8} onPress={() => setShowDatePicker(true)}>
+                                    <Icon name="calendar-today" size={18} color={Colors.light.icon} />
+                                </TouchableOpacity>
                             </View>
+                            {showDatePicker && DateTimePicker ? (
+                                <DateTimePicker
+                                    value={arrivalDate ? new Date(`${arrivalDate}T00:00:00`) : new Date()}
+                                    mode="date"
+                                    onChange={onDateChange}
+                                />
+                            ) : null}
                         </View>
 
                         {/* Active Toggle */}

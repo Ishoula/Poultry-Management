@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useFonts, Roboto_400Regular, Roboto_700Bold } from '@expo-google-fonts/roboto'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 import { AuthProvider } from '../context/AuthContext'
 SplashScreen.preventAutoHideAsync()
@@ -26,10 +27,12 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <SafeScreen>
-        <Stack screenOptions={{ headerShown: false }} />
-      </SafeScreen>
-      <StatusBar style="auto" />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeScreen>
+          <Stack screenOptions={{ headerShown: false }} />
+        </SafeScreen>
+        <StatusBar style="auto" />
+      </GestureHandlerRootView>
     </AuthProvider>
   )
 }

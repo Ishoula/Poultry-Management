@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { Swipeable } from 'react-native-gesture-handler';
 
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
@@ -23,7 +24,7 @@ const TasksScreen = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const loadTasks = React.useCallback(async () => {
+     const loadTasks = React.useCallback(async () => {
         try {
             setError('');
             setLoading(true);
@@ -35,6 +36,44 @@ const TasksScreen = () => {
             setLoading(false);
         }
     }, []);
+
+    const confirmDeleteTask = React.useCallback(
+        (task) => {
+            if (!task?.id) return;
+            Alert.alert('Delete task', 'This will permanently delete the task.', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await authFetch(`/tasks/${task.id}`, { method: 'DELETE' });
+                            loadTasks();
+                        } catch (e) {
+                            Alert.alert('Error', e?.message || 'Failed to delete task');
+                        }
+                    },
+                },
+            ]);
+        },
+        [loadTasks]
+    );
+
+    const renderRightActions = React.useCallback(
+        (task) => (
+            <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => confirmDeleteTask(task)}
+                style={styles.deleteAction}
+            >
+                <Ionicons name="trash-outline" size={22} color="#fff" />
+                <Text style={styles.deleteActionText}>Delete</Text>
+            </TouchableOpacity>
+        ),
+        [confirmDeleteTask]
+    );
+
+   
 
     useEffect(() => {
         loadTasks();
@@ -141,34 +180,39 @@ const TasksScreen = () => {
                                     ? priorityStyles.Low
                                     : priorityStyles.Medium;
                             return (
-                                <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardDone]}>
-                                    <TouchableOpacity
-                                        activeOpacity={0.7}
-                                        style={[styles.checkbox, task.completed ? styles.checkboxChecked : styles.checkboxDefault]}
-                                        onPress={() => toggleTask(task.id)}
+                                <Swipeable key={task.id} renderRightActions={() => renderRightActions(task)}>
+                                    <Pressable
+                                        onPress={() => router.push({ pathname: '/(screens)/addTask', params: { taskId: task.id } })}
+                                        style={[styles.taskCard, task.completed && styles.taskCardDone]}
                                     >
-                                        {task.completed && <Ionicons name="checkmark-sharp" size={20} color="white" />}
-                                    </TouchableOpacity>
+                                        <TouchableOpacity
+                                            activeOpacity={0.7}
+                                            style={[styles.checkbox, task.completed ? styles.checkboxChecked : styles.checkboxDefault]}
+                                            onPress={() => toggleTask(task.id)}
+                                        >
+                                            {task.completed && <Ionicons name="checkmark-sharp" size={20} color="white" />}
+                                        </TouchableOpacity>
 
-                                    <View style={styles.cardContent}>
-                                        <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]}>
-                                            {task.title}
-                                        </Text>
-                                        <View style={styles.metaRow}>
-                                            <View style={styles.tagBadge}>
-                                                <Text style={styles.tagText}>{task.category}</Text>
-                                            </View>
-                                            <View style={styles.timeGroup}>
-                                                <Ionicons name="time-outline" size={14} color="#94A3B8" />
-                                                <Text style={styles.timeText}>{task.time}</Text>
+                                        <View style={styles.cardContent}>
+                                            <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]}>
+                                                {task.title}
+                                            </Text>
+                                            <View style={styles.metaRow}>
+                                                <View style={styles.tagBadge}>
+                                                    <Text style={styles.tagText}>{task.category}</Text>
+                                                </View>
+                                                <View style={styles.timeGroup}>
+                                                    <Ionicons name="time-outline" size={14} color="#94A3B8" />
+                                                    <Text style={styles.timeText}>{task.time}</Text>
+                                                </View>
                                             </View>
                                         </View>
-                                    </View>
 
-                                    {!task.completed && (
-                                        <View style={[styles.priorityDot, { backgroundColor: badgeStyle.dot }]} />
-                                    )}
-                                </View>
+                                        {!task.completed && (
+                                            <View style={[styles.priorityDot, { backgroundColor: badgeStyle.dot }]} />
+                                        )}
+                                    </Pressable>
+                                </Swipeable>
                             );
                         })
                     ) : (
@@ -190,7 +234,7 @@ const TasksScreen = () => {
             <TouchableOpacity 
                 activeOpacity={0.9} 
                 style={styles.fab} 
-                onPress={() => router.push('/addTask')}
+                onPress={() => router.push('/(screens)/addTask')}
             >
                 <Ionicons name="add" size={32} color="white" />
             </TouchableOpacity>
@@ -236,7 +280,7 @@ const styles = StyleSheet.create({
     
     cardContent: { flex: 1 },
     taskTitle: { fontSize: 16, fontWeight: '700', color: '#334155' },
-    taskTitleDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+    taskTitleDone: {color: Colors.light.success },
     
     metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 10 },
     tagBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
@@ -245,6 +289,22 @@ const styles = StyleSheet.create({
     timeText: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
     
     priorityDot: { width: 8, height: 8, borderRadius: 4, marginLeft: 10 },
+
+    deleteAction: {
+        width: 88,
+        backgroundColor: '#EF4444',
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+        paddingVertical: 10,
+        gap: 6,
+    },
+    deleteActionText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '800',
+    },
 
     emptyContainer: { alignItems: 'center', marginTop: 60 },
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },

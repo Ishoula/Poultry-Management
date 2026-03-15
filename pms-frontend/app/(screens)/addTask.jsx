@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import UserNavbar from '../../components/UserNavbar';
 import { Colors } from '../../constants/colors';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { authFetch } from '../../context/AuthContext';
 
 const categories = [
@@ -32,6 +32,9 @@ const priorities = [
 
 const NewTaskScreen = () => {
   const router = useRouter();
+  const { taskId } = useLocalSearchParams();
+  const taskIdStr = Array.isArray(taskId) ? taskId[0] : taskId;
+  const editing = !!taskIdStr;
   const [taskName, setTaskName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categories[0].name);
   const [date, setDate] = useState(new Date());
@@ -41,6 +44,87 @@ const NewTaskScreen = () => {
   const [selectedPriority, setSelectedPriority] = useState('Medium');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [loadingTask, setLoadingTask] = useState(false);
+
+  const fromApiCategory = useMemo(
+    () => (apiValue) => {
+      const v = String(apiValue || '').trim().toLowerCase();
+      if (v === 'feeding') return 'Feeding';
+      if (v === 'cleaning') return 'Cleaning';
+      if (v === 'health check') return 'Health';
+      return 'Environment';
+    },
+    []
+  );
+
+  const fromApiPriority = useMemo(
+    () => (apiValue) => {
+      const v = String(apiValue || '').trim().toLowerCase();
+      if (v === 'high') return 'High';
+      if (v === 'low') return 'Low';
+      return 'Medium';
+    },
+    []
+  );
+
+  const timeStringToDate = useMemo(
+    () => (timeStr) => {
+      const raw = String(timeStr || '');
+      const [hhRaw, mmRaw] = raw.split(':');
+      const hh = Number(hhRaw);
+      const mm = Number(mmRaw);
+      const d = new Date();
+      if (!Number.isNaN(hh)) d.setHours(hh);
+      if (!Number.isNaN(mm)) d.setMinutes(mm);
+      d.setSeconds(0);
+      d.setMilliseconds(0);
+      return d;
+    },
+    []
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    if (!editing) return;
+
+    (async () => {
+      try {
+        setLoadingTask(true);
+        const data = await authFetch(`/tasks/${taskIdStr}`, { method: 'GET' });
+        if (!mounted) return;
+
+        setTaskName(String(data?.taskName || ''));
+        setSelectedCategory(fromApiCategory(data?.category));
+        setSelectedPriority(fromApiPriority(data?.priority));
+        setNotes(String(data?.notes || ''));
+
+        if (data?.date) {
+          const d = new Date(data.date);
+          if (!Number.isNaN(d.getTime())) setDate(d);
+        }
+        if (data?.time) {
+          setTime(timeStringToDate(data.time));
+        }
+      } catch (e) {
+        Alert.alert('Failed to load task', e?.message || 'Please try again');
+      } finally {
+        if (mounted) setLoadingTask(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [editing, taskIdStr, fromApiCategory, fromApiPriority, timeStringToDate]);
+
+  const toApiCategory = (label) => {
+    const v = String(label || '').trim().toLowerCase();
+    if (v === 'feeding') return 'feeding';
+    if (v === 'cleaning') return 'cleaning';
+    if (v === 'health') return 'health check';
+    if (v === 'environment') return 'other';
+    return 'other';
+  };
 
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false); // Close on Android immediately
@@ -69,20 +153,13 @@ const NewTaskScreen = () => {
     return `${hh}:${mm}`;
   };
 
-  const toApiCategory = (label) => {
-    const v = String(label || '').trim().toLowerCase();
-    if (v === 'feeding') return 'feeding';
-    if (v === 'cleaning') return 'cleaning';
-    if (v === 'health') return 'health check';
-    if (v === 'environment') return 'other';
-    return 'other';
-  };
-
   const handleSave = async () => {
     if (!taskName.trim()) {
       Alert.alert('Missing task name', 'Please enter a task name.');
       return;
     }
+
+    if (submitting || loadingTask) return;
 
     const payload = {
       taskName: taskName.trim(),
@@ -95,10 +172,17 @@ const NewTaskScreen = () => {
 
     try {
       setSubmitting(true);
-      await authFetch('/tasks', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      if (editing) {
+        await authFetch(`/tasks/${taskIdStr}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await authFetch('/tasks', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
       router.replace('/(tabs)/tasks');
     } catch (e) {
       Alert.alert('Failed to save task', e?.message || 'Please try again');
@@ -108,124 +192,130 @@ const NewTaskScreen = () => {
   };
 
   return (
-  <>
-    <UserNavbar />
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>New Task</Text>
+    <>
+      <UserNavbar />
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>{editing ? 'Edit Task' : 'New Task'}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="e.g. Clean the water tanks"
-        placeholderTextColor="#AAA"
-        value={taskName}
-        onChangeText={setTaskName}
-      />
+        {loadingTask ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={Colors.light.success} />
+          </View>
+        ) : null}
 
-      <Text style={styles.label}>Category</Text>
-      <View style={styles.categoryContainer}>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.name}
-            style={[
-              styles.categoryButton,
-              selectedCategory === cat.name && {
-                ...styles.selectedCategory, backgroundColor: `${Colors.light.success}10`,
-                borderColor: Colors.light.success,
-              },
-            ]}
-            onPress={() => setSelectedCategory(cat.name)}
-          >
-            <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#096b00' :'#5c5c5c'} />
-            <Text
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Clean the water tanks"
+          placeholderTextColor="#AAA"
+          value={taskName}
+          onChangeText={setTaskName}
+        />
+
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.categoryContainer}>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat.name}
               style={[
-                styles.categoryText,
-                { color: selectedCategory === cat.name ? '#096b00' : '#5c5c5c'},
+                styles.categoryButton,
+                selectedCategory === cat.name && {
+                  ...styles.selectedCategory, backgroundColor: `${Colors.light.success}10`,
+                  borderColor: Colors.light.success,
+                },
               ]}
+              onPress={() => setSelectedCategory(cat.name)}
             >
-              {cat.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.dateTimeContainer}>
-        <View style={styles.dateTimeItem}>
-          <Text style={styles.label}>Date</Text>
-          <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
-            <Text style={styles.pickerText}>{formatDate(date)}</Text>
-            <Icon name="calendar-today" size={20} color="#757575" />
-          </TouchableOpacity>
+              <Icon name={cat.icon} size={24} color={selectedCategory === cat.name ? '#096b00' :'#5c5c5c'} />
+              <Text
+                style={[
+                  styles.categoryText,
+                  { color: selectedCategory === cat.name ? '#096b00' : '#5c5c5c'},
+                ]}
+              >
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.dateTimeItem}>
-          <Text style={styles.label}>Time</Text>
-          <TouchableOpacity style={styles.pickerButton} onPress={() => setShowTimePicker(true)}>
-            <Text style={styles.pickerText}>{formatTime(time)}</Text>
-            <Icon name="access-time" size={20} color="#757575" />
-          </TouchableOpacity>
+        <View style={styles.dateTimeContainer}>
+          <View style={styles.dateTimeItem}>
+            <Text style={styles.label}>Date</Text>
+            <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.pickerText}>{formatDate(date)}</Text>
+              <Icon name="calendar-today" size={20} color="#757575" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.dateTimeItem}>
+            <Text style={styles.label}>Time</Text>
+            <TouchableOpacity style={styles.pickerButton} onPress={() => setShowTimePicker(true)}>
+              <Text style={styles.pickerText}>{formatTime(time)}</Text>
+              <Icon name="access-time" size={20} color="#757575" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={onDateChange}
-        />
-      )}
-
-      {showTimePicker && (
-        <DateTimePicker
-          value={time}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onTimeChange}
-        />
-      )}
-
-      <Text style={styles.label}>Priority</Text>
-      <View style={styles.priorityContainer}>
-        {priorities.map((prio) => (
-          <TouchableOpacity
-            key={prio.label}
-            style={[
-              styles.priorityButton,
-              selectedPriority === prio.label && { ...styles.selectedPriority, backgroundColor: prio.color, borderColor: prio.color },
-            ]}
-            onPress={() => setSelectedPriority(prio.label)}
-          >
-            <Text
-              style={[
-                styles.priorityText,
-                selectedPriority === prio.label && { color: '#FFF' },
-              ]}
-            >
-              {prio.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Notes</Text>
-      <TextInput
-        style={[styles.input, styles.notesInput]}
-        placeholder="Add additional details about the task..."
-        placeholderTextColor="#AAA"
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-        numberOfLines={4}
-      />
-
-      <TouchableOpacity style={[styles.saveButton, submitting && { opacity: 0.8 }]} onPress={handleSave} disabled={submitting}>
-        {submitting ? (
-          <ActivityIndicator size="small" color="#FFF" />
-        ) : (
-          <Text style={styles.buttonText}>Save Task</Text>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={onDateChange}
+          />
         )}
-      </TouchableOpacity>
-    </ScrollView>
+
+        {showTimePicker && (
+          <DateTimePicker
+            value={time}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onTimeChange}
+          />
+        )}
+
+        <Text style={styles.label}>Priority</Text>
+        <View style={styles.priorityContainer}>
+          {priorities.map((prio) => (
+            <TouchableOpacity
+              key={prio.label}
+              style={[
+                styles.priorityButton,
+                selectedPriority === prio.label && { ...styles.selectedPriority, backgroundColor: prio.color, borderColor: prio.color },
+              ]}
+              onPress={() => setSelectedPriority(prio.label)}
+            >
+              <Text
+                style={[
+                  styles.priorityText,
+                  selectedPriority === prio.label && { color: '#FFF' },
+                ]}
+              >
+                {prio.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Notes</Text>
+        <TextInput
+          style={[styles.input, styles.notesInput]}
+          placeholder="Add additional details about the task..."
+          placeholderTextColor="#AAA"
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+          numberOfLines={4}
+        />
+
+        <TouchableOpacity style={[styles.saveButton, (submitting || loadingTask) && { opacity: 0.8 }]} onPress={handleSave} disabled={submitting || loadingTask}>
+          {submitting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.buttonText}>{editing ? 'Update Task' : 'Save Task'}</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
     </>
   );
 };
