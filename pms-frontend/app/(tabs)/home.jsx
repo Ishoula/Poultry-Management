@@ -50,7 +50,7 @@ export default function HomeScreen() {
     return () => { mounted = false; };
   }, []);
 
-  const firstName = me?.username?.split(' ')[0] || 'Farmer';
+  const firstName = me?.username?.split(' ')[0] || 'User';
   const batchCount = batches.length;
   
   const deadCount = useMemo(() => {

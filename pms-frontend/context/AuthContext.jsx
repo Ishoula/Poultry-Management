@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
+import { router } from 'expo-router'
 
 const TOKEN_KEY = 'auth_token'
 
 const AuthContext = createContext(null)
+
+let setTokenState = null
 
 async function setTokenInStorage(token) {
   if (Platform.OS === 'web') {
@@ -63,7 +66,10 @@ async function requestJson(path, options = {}) {
       (maybeJson && (maybeJson.message || maybeJson.error)) ||
       text ||
       `Request failed (${res.status})`
-    throw new Error(message)
+    const err = new Error(message)
+    err.status = res.status
+    err.body = maybeJson
+    throw err
   }
 
   return maybeJson
@@ -72,6 +78,8 @@ async function requestJson(path, options = {}) {
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null)
   const [initializing, setInitializing] = useState(true)
+
+  setTokenState = setToken
 
   useEffect(() => {
     let mounted = true
@@ -140,11 +148,30 @@ export function useAuth() {
 
 export async function authFetch(path, options = {}) {
   const token = await getTokenFromStorage()
-  return requestJson(path, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  })
+
+  try {
+    return await requestJson(path, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+  } catch (err) {
+    const status = err?.status
+    const msg = String(err?.message || '').toLowerCase()
+
+    const isAuthError =
+      status === 401 ||
+      status === 403 ||
+      (status === 400 && (msg.includes('invalid token') || msg.includes('access denied')))
+
+    if (isAuthError) {
+      await setTokenInStorage(null)
+      if (typeof setTokenState === 'function') setTokenState(null)
+      router.replace('/(auth)/login')
+    }
+
+    throw err
+  }
 }

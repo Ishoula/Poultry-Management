@@ -39,7 +39,7 @@ export default function SignUpScreen() {
         email: emailAddress.trim(),
         password,
       });
-      router.replace('/(auth)/login');
+      router.replace('/login');
     } catch (err) {
       setError(err?.message || 'Failed to create account. Please try again.');
     } finally {
